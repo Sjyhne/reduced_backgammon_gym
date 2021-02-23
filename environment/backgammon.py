@@ -111,7 +111,7 @@ class Backgammon:
                 ...
             else:
                 # TODO: Move our own piece to the spot
-            
+                ...
 
 
 bg = Backgammon()
