@@ -18,6 +18,8 @@ MAX_N_STACK = 3
 DOUBLE_CHANCE = 0.3
 # Tokens for the players
 TOKENS = {WHITE: "O", BLACK: "X", None: "-"}
+# Integer for representing the BAR location
+BAR = -10
 
 # The board looks like this atm
 # 0    1    2   3   4   5   6   7    8
@@ -101,8 +103,27 @@ class Backgammon:
     # is a tuple for the src and dest for the action (src, dest)
     def is_valid(self, color, action):
         src, target = action
+        # Must check if the player has a piece on the bar, if he has, then he must
+        # Move that piece first.
         # Have to check if the action is within bounds of the board
-        if self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
+        if self.bar[color] > 0:
+            # Then we need to check if the move is moving the piece from the bar
+            # And onto the board
+            if src == BAR:
+                # Check if there are more than two enemies on the target
+                if self.board[target]["count"] > 1 and self.board[target][color] == self.get_opponent_color(color):
+                    return False
+                # Check if there are 3 pieces on the spot - if so, then we cannot move
+                elif self.board[target]["count"] == MAX_N_STACK:
+                    return False
+                # If the target is out of bounds
+                elif (0 > target) or (target >= N_SPOT):
+                    return False
+                # Now I think the wrong targets are removed
+                else:
+                    return True
+
+        elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
             if 0 <= target < N_SPOTS:
                 # If the target is within board limits, then we have to check
                 # If the target has two or more enemies, or the target reaches
