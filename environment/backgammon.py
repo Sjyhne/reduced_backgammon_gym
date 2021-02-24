@@ -1,5 +1,3 @@
-# import itertools
-# from collections import namedtuple
 import random
 
 # Variables for the color of the players
@@ -8,7 +6,7 @@ COLORS = {WHITE: "White", BLACK: "Black"}
 # The number of spots each player has as home spots
 N_HOME_POSITIONS = 2
 # Total number of spots, disregarding the BAR and OFF
-N_SPOTS = 9
+N_SPOTS = 8
 # Number of pieces per player
 N_PIECES = 5
 # Number of sides on dice
@@ -32,9 +30,22 @@ def initiate_board():
     board[0].update({"count": 2, "color": WHITE})
     board[1].update({"count": 1, "color": BLACK})
     board[3].update({"count": 2, "color": WHITE})
-    board[5].update({"count": 2, "color": BLACK})
-    board[7].update({"count": 1, "color": WHITE})
-    board[8].update({"count": 2, "color": BLACK})
+    board[4].update({"count": 2, "color": BLACK})
+    board[6].update({"count": 1, "color": WHITE})
+    board[7].update({"count": 2, "color": BLACK})
+
+    # A counter for how many has been moved to the bar
+    bar = {WHITE: 0, BLACK: 0}
+    # Only a counter for how many has been beared off
+    off = {WHITE: 0, BLACK: 0}
+
+    return board, bar, off
+
+def skip_board():
+    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
+    board[0].update({"count": 2, "color": WHITE})
+    board[1].update({"count": 2, "color": BLACK})
+    board[2].update({"count": 2, "color": BLACK})
 
     # A counter for how many has been moved to the bar
     bar = {WHITE: 0, BLACK: 0}
@@ -75,17 +86,19 @@ class Backgammon:
 
     def __init__(self):
         # Initiates the board to the starting positions
-        self.board, self.bar, self.off = bear_off_board_setup()
+        self.board, self.bar, self.off = initiate_board()
         # The home positions/goal for the pieces before they can bear off
         self.players_home_positions = {WHITE: range(N_SPOTS)[N_SPOTS - N_HOME_POSITIONS:], BLACK: range(N_SPOTS)[:N_HOME_POSITIONS]}
-        # Keep count of the used and non-used dice
-        self.used_dice = []
-        self.non_used_dice = list(self.roll())
 
     def roll(self):
-        r1 = random.choice([1, 2])
-        r2 = random.choice([1, 2])
-        return (r1, r2)
+        self.used_dice = []
+        self.non_used_dice = []
+        r1 = random.choice([1, 1, 1, 2, 2, 2, 2, 2, 2, 2])
+        r2 = random.choice([1, 1, 1, 1, 1, 1, 1, 2, 2, 2])
+        if r1 == r2:
+            self.non_used_dice = [r1 for i in range(4)]
+        else:
+            self.non_used_dice = [r1, r2]
 
     
     def get_players_positions(self):
@@ -111,16 +124,18 @@ class Backgammon:
             print("CANNOT BEAR OFF -> BAR NOT EMPTY")
             return False
         # Get the positions of the current player
-        players_positions = self.get_players_positions()[color]
-        spots = [i["spot"] for i in players_positions]  
+        spots = [i["spot"] for i in self.get_players_positions()[color]]  
         # Returns True if set(spots) is a subset of set(players_home_positions)
         return set(set(spots)).issubset(self.players_home_positions[color])
+
 
     # Check for whether the piece is the furthest piece away from bearing off
     # This is relevant when the die shows 2, and the player tries to move
     # the innermost of the two places in home position. (1, 1) -> (1, 0) | 1 OFF
+
+    # [1, 1] -> (7, 9)
     def is_src_furthest_piece(self, color, action):
-        src, dst = action
+        _, (src, dst) = action
         player_positions = [i["spot"] for i in self.get_players_positions()[color]]
         if color == WHITE:
             # It is min() for white because their home are at end of board
@@ -142,50 +157,96 @@ class Backgammon:
         # Must check if the player has a piece on the bar, if he has, then he must
         # Move that piece first.
         # Have to check if the action is within bounds of the board
-        if self.bar[color] > 0:
-            # Then we need to check if the move is moving the piece from the bar
-            # And onto the board
-            if src == BAR and (0 <= target < N_SPOTS):
-                # Check if there are more than two enemies on the target
-                print(target)
-                if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
-                    return False
-                # Check if there are 3 pieces on the spot - if so, then we cannot move
-                elif self.board[target]["count"] == MAX_N_STACK:
-                    return False
-                # If the target is out of bounds
-                elif (0 > target) or (target >= N_SPOTS):
-                    return False
-                # Now I think the wrong targets are removed
-                else:
-                    return True
-
-        elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
-            if 0 <= target < N_SPOTS:
-                # If the target is within board limits, then we have to check
-                # If the target has two or more enemies, or the target reaches
-                # The upper limit of how many pieces can be stacked (3)
-                if self.board[target]["color"] != color and self.board[target]["count"] > 1:
-                    return False
-                elif self.board[target]["color"] == color and self.board[target]["count"] > MAX_N_STACK:
-                    return False
-                else:
-                    return True
-            # If the target is not within the bounds of the board
-            # Then we have to check whether or not the player can
-            # Bear off
-            elif self.can_bear_off(color):
-                # If the target is not 10, then check if the source piece
-                # Is the last piece of all pieces in home
-                if target > N_SPOTS - 1 or target < -1:
-                    if self.is_src_furthest_piece(color, action):
-                        return True
-                    else:
+        if color == WHITE and target > src:
+            if self.bar[color] > 0:
+                # Then we need to check if the move is moving the piece from the bar
+                # And onto the board
+                if src == BAR and (0 <= target < N_SPOTS):
+                    # Check if there are more than two enemies on the target
+                    if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
                         return False
-                
-                return True
+                    # Check if there are 3 pieces on the spot - if so, then we cannot move
+                    elif self.board[target]["count"] == MAX_N_STACK:
+                        return False
+                    # If the target is out of bounds
+    #                elif (0 > target) or (target >= N_SPOTS):
+    #                    return False
+                    # Now I think the wrong targets are removed
+                    else:
+                        return True
 
-        return False
+            elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
+                if 0 <= target < N_SPOTS:
+                    # If the target is within board limits, then we have to check
+                    # If the target has two or more enemies, or the target reaches
+                    # The upper limit of how many pieces can be stacked (3)
+                    if self.board[target]["color"] != color and self.board[target]["count"] > 1:
+                        return False
+                    elif self.board[target]["color"] == color and self.board[target]["count"] == MAX_N_STACK:
+                        return False
+                    else:
+                        return True
+                # If the target is not within the bounds of the board
+                # Then we have to check whether or not the player can
+                # Bear off
+                elif self.can_bear_off(color):
+                    # If the target is not N_SPOTS, then check if the source piece
+                    # Is the last piece of all pieces in home
+                    if target > N_SPOTS or target < -1:
+                        if self.is_src_furthest_piece(color, action):
+                            return True
+                        else:
+                            return False
+                    
+                    return True
+
+            return False
+        elif color == BLACK and target < src:
+            if self.bar[color] > 0:
+                # Then we need to check if the move is moving the piece from the bar
+                # And onto the board
+                if src == BAR and (0 <= target < N_SPOTS):
+                    # Check if there are more than two enemies on the target
+                    if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
+                        return False
+                    # Check if there are 3 pieces on the spot - if so, then we cannot move
+                    elif self.board[target]["count"] == MAX_N_STACK:
+                        return False
+                    # If the target is out of bounds
+    #                elif (0 > target) or (target >= N_SPOTS):
+    #                    return False
+                    # Now I think the wrong targets are removed
+                    else:
+                        return True
+
+            elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
+                if 0 <= target < N_SPOTS:
+                    # If the target is within board limits, then we have to check
+                    # If the target has two or more enemies, or the target reaches
+                    # The upper limit of how many pieces can be stacked (3)
+                    if self.board[target]["color"] != color and self.board[target]["count"] > 1:
+                        return False
+                    elif self.board[target]["color"] == color and self.board[target]["count"] == MAX_N_STACK:
+                        return False
+                    else:
+                        return True
+                # If the target is not within the bounds of the board
+                # Then we have to check whether or not the player can
+                # Bear off
+                elif self.can_bear_off(color):
+                    # If the target is not N_SPOTS, then check if the source piece
+                    # Is the last piece of all pieces in home
+                    if target > N_SPOTS or target < -1:
+                        if self.is_src_furthest_piece(color, action):
+                            return True
+                        else:
+                            return False
+                    
+                    return True
+
+            return False
+        else:
+            return False
 
     def get_opponent_color(self, color):
         if color == WHITE:
@@ -233,8 +294,6 @@ class Backgammon:
         # Add piece to "OFF"
         self.off[color] += 1
 
-        print(self.off[color])
-
     def move_from_bar(self, color, action):
         _, (src, dst) = action
         # Decrement the bar counter
@@ -247,8 +306,11 @@ class Backgammon:
         # If the action is true
         if self.is_valid(color, action):
             # Check if there is an opponent piece on the target
-            if self.board[target]["color"] == self.get_opponent_color(color) and target >= 0:
-                print("KNOCKOUT")
+            # If the player can bear off (all home) and the target is not in
+            # The normal range of spots, then move the player off
+            if self.can_bear_off(color) and target not in range(N_SPOTS):
+                self.move_piece_off(color, action)
+            elif self.board[target]["color"] == self.get_opponent_color(color) and self.board[target]["count"] == 1:
                 # Adding the opponents piece to the bar and removing it from the target
                 self.knock_out_piece(self.get_opponent_color(color), target)
                 # Move the piece from the source to the target
@@ -256,46 +318,41 @@ class Backgammon:
                     self.move_from_bar(color, action)
                 else:
                     self.move_piece_from_src_to_dest(color, action)
-            # If the player can bear off (all home) and the target is not in
-            # The normal range of spots, then move the player off
-            elif self.can_bear_off(color) and target not in range(N_SPOTS):
-                self.move_piece_off(color, action)
             elif src == BAR:
                 self.move_from_bar(color, action)
             else:
                 # Move the piece from the source to the target
                 self.move_piece_from_src_to_dest(color, action)
+
             self.non_used_dice.remove(roll)
             self.used_dice.append(roll)
+            return True
         else:
             print("ACTION IS NOT VALID")
+            return False
 
     # The starting row variable is for when we are moving from bar
     def generate_single_action(self, src, starting_point, roll):
         actions = []
         # Add all actions where the die is added to the starting point
-        for i in roll:
-            actions.append((i, (src, starting_point + i)))
         # Add all actions where the die is subtracted from the starting point
-        for i in roll:
-            actions.append((i, (src, starting_point - i)))
+        for die in roll:
+            actions.append((die, (src, starting_point + die)))
+            actions.append((die, (src, starting_point - die)))
         
         return list(set(actions))
 
     def generate_actions(self, color, roll):
         # First step must be to get all of the positions of the current player
-        players_positions = self.get_players_positions()[color]
-        spots = [i["spot"] for i in players_positions]
-        print("Spots with pieces: ", spots)
-
+        spots = [i["spot"] for i in self.get_players_positions()[color]]
         actions = []
 
         # For each spot, generate an action with the associated source spot
         for spot in spots:
             src = spot
             # Must check if the source is BAR, then the starting position is either
-            # -1 or 9, depending on color
-            if spot == BAR:
+            # -1 or 8, depending on color
+            if src == BAR:
                 # An example would be that if WHITE uses a die of value 1 from BAR
                 # Then it will land on spot 0, therefore -1 is used
                 if color == WHITE:
@@ -305,7 +362,7 @@ class Backgammon:
                 # Same here, only black is moving the opposite direction
                 # So the using a die of value 1 means landing on positions 8
                 elif color == BLACK:
-                    temp_src = 9
+                    temp_src = N_SPOTS
                     temp_actions = self.generate_single_action(src, temp_src, roll)
                     actions.extend(temp_actions)
             # If the src spot is not the bar, then nothing extra needs to be 
@@ -314,43 +371,56 @@ class Backgammon:
                 temp_actions = self.generate_single_action(src, src, roll)
                 actions.extend(temp_actions)
             
-        return actions
+        return list(set(actions))
 
     def render(self, round_nr):
-        print(round_nr)
-        print("=================================================")
-        print(" B: {} | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | W: {}".format(self.off[BLACK], self.off[WHITE]))
-        print("-------------------------------------------------")
+        print(f"BLACK              ROUND: {round_nr}             WHITE")
+        print("=============================================")
+        #print(" B: {} | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | W: {}".format(self.off[BLACK], self.off[WHITE]))
+        spot_string = "OFF: {}|".format(self.off[BLACK])
         token_string = f"BAR: {self.bar[BLACK]}|"
         count_string = f"      |"
-        for i in range(9):
+        for i in range(N_SPOTS):
             token_string += f" {TOKENS[self.board[i]['color']]} |"
             count_string += f" {self.board[i]['count']} |"
+            spot_string += f" {i} |"
+        spot_string += "OFF: {}".format(self.off[WHITE])
         token_string += f"BAR: {self.bar[WHITE]}"
-
+        print(spot_string)
+        print("---------------------------------------------")
         print(token_string)
         print(count_string)
-        print("=================================================")
-        print("\n")
+        print("=============================================")
 
+
+
+# TODO: TEST SKIP
 
 bg = Backgammon()
-
-print("INITIAL BOARD!")
+agent = WHITE
 bg.render(0)
-roll = bg.roll()
-actions = bg.generate_actions(BLACK, roll)
-print(actions)
-for i in actions:
-    if bg.is_valid(BLACK, i):
-        print(i)
-"""print("NONUSED:", bg.non_used_dice)
-print("USED:", bg.used_dice)
-bg.execute_action(BLACK, (2, (8, 6)))
-print("NONUSED:", bg.non_used_dice)
-print("USED:", bg.used_dice)
-bg.render(2)
-bg.execute_action(BLACK, (1, (8, 7)))
-print("NONUSED:", bg.non_used_dice)
-print("USED:", bg.used_dice)
-bg.render(3)"""
+for r in range(100):
+    bg.roll()
+    actions = bg.generate_actions(agent, bg.non_used_dice)
+    print("ACTIONS:", actions)
+    print("VALID ACTIONS")
+    for a in actions:
+        if bg.is_valid(agent, a):
+            print(a)
+    for die in bg.non_used_dice:
+        print("NONUSEDDICE:", bg.non_used_dice)
+        for i in range(len(actions)):
+            action = random.choice(actions)
+            executed = bg.execute_action(agent, action)
+            if executed:
+                print("ACTION EXECUTED:", action)
+                print()
+                print()
+                bg.render(r)
+                actions = bg.generate_actions(agent, bg.non_used_dice)
+                break
+
+    agent = bg.get_opponent_color(agent)
+        
+
+bg.render(3)
