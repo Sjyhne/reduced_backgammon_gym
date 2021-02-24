@@ -1,5 +1,6 @@
 # import itertools
 # from collections import namedtuple
+import random
 
 # Variables for the color of the players
 WHITE, BLACK = 0, 1
@@ -74,9 +75,17 @@ class Backgammon:
 
     def __init__(self):
         # Initiates the board to the starting positions
-        self.board, self.bar, self.off = bar_play_board_setup()
+        self.board, self.bar, self.off = bear_off_board_setup()
         # The home positions/goal for the pieces before they can bear off
         self.players_home_positions = {WHITE: range(N_SPOTS)[N_SPOTS - N_HOME_POSITIONS:], BLACK: range(N_SPOTS)[:N_HOME_POSITIONS]}
+        # Keep count of the used and non-used dice
+        self.used_dice = []
+        self.non_used_dice = list(self.roll())
+
+    def roll(self):
+        r1 = random.choice([1, 2])
+        r2 = random.choice([1, 2])
+        return (r1, r2)
 
     
     def get_players_positions(self):
@@ -114,11 +123,13 @@ class Backgammon:
         src, dst = action
         player_positions = [i["spot"] for i in self.get_players_positions()[color]]
         if color == WHITE:
+            # It is min() for white because their home are at end of board
             if src == min(player_positions):
                 return True
             else:
                 return False
         else:
+            # It is max() for BLACK because their home are at the start of board
             if src == max(player_positions):
                 return True
             else:
@@ -127,7 +138,7 @@ class Backgammon:
     # color is the color of the current player, and action
     # is a tuple for the src and dest for the action (src, dest)
     def is_valid(self, color, action):
-        src, target = action
+        _, (src, target) = action
         # Must check if the player has a piece on the bar, if he has, then he must
         # Move that piece first.
         # Have to check if the action is within bounds of the board
@@ -207,7 +218,7 @@ class Backgammon:
             self.board[dst].update({"count": dst_piece_count + 1})
 
     def move_piece_from_src_to_dest(self, color, action):
-        src, dst = action
+        _, (src, dst) = action
         src_piece_count = self.board[src]["count"]
         if src_piece_count < 1:
             raise RuntimeError("Cannot move from spot because there are no pieces left")
@@ -216,7 +227,7 @@ class Backgammon:
         self.add_piece_to_dst(color, dst)
         
     def move_piece_off(self, color, action):
-        src, _ = action
+        _, (src, _) = action
         # Remove piece from src
         self.remove_piece_from_src(color, src)
         # Add piece to "OFF"
@@ -225,14 +236,14 @@ class Backgammon:
         print(self.off[color])
 
     def move_from_bar(self, color, action):
-        src, dst = action
+        _, (src, dst) = action
         # Decrement the bar counter
         self.bar[color] -= 1
         # Move the piece onto the board
         self.add_piece_to_dst(color, dst)
         
     def execute_action(self, color, action):
-        src, target = action
+        roll, (src, target) = action
         # If the action is true
         if self.is_valid(color, action):
             # Check if there is an opponent piece on the target
@@ -254,13 +265,20 @@ class Backgammon:
             else:
                 # Move the piece from the source to the target
                 self.move_piece_from_src_to_dest(color, action)
+            self.non_used_dice.remove(roll)
+            self.used_dice.append(roll)
+        else:
+            print("ACTION IS NOT VALID")
 
+    # The starting row variable is for when we are moving from bar
     def generate_single_action(self, src, starting_point, roll):
         actions = []
+        # Add all actions where the die is added to the starting point
         for i in roll:
-            actions.append((src, starting_point + i))
+            actions.append((i, (src, starting_point + i)))
+        # Add all actions where the die is subtracted from the starting point
         for i in roll:
-            actions.append((src, starting_point - i))
+            actions.append((i, (src, starting_point - i)))
         
         return list(set(actions))
 
@@ -290,20 +308,18 @@ class Backgammon:
                     temp_src = 9
                     temp_actions = self.generate_single_action(src, temp_src, roll)
                     actions.extend(temp_actions)
+            # If the src spot is not the bar, then nothing extra needs to be 
+            # Taken care of
             else:
                 temp_actions = self.generate_single_action(src, src, roll)
                 actions.extend(temp_actions)
             
         return actions
 
-        # TODO: Remember to handle double throw? Or not..?
-        # TODO: Implement the generation of all actions using the dice throw
-        ...
-
     def render(self, round_nr):
-        print(f"                   |-| {round_nr} |-|")
+        print(round_nr)
         print("=================================================")
-        print(f" B: {self.off[BLACK]} | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | W: {self.off[WHITE]}")
+        print(" B: {} | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | W: {}".format(self.off[BLACK], self.off[WHITE]))
         print("-------------------------------------------------")
         token_string = f"BAR: {self.bar[BLACK]}|"
         count_string = f"      |"
@@ -322,12 +338,19 @@ bg = Backgammon()
 
 print("INITIAL BOARD!")
 bg.render(0)
-print(bg.generate_actions(BLACK, (1, 2)))
-print(len(bg.generate_actions(BLACK, (1, 2))))
-actions = bg.generate_actions(BLACK, (1, 2))
+roll = bg.roll()
+actions = bg.generate_actions(BLACK, roll)
+print(actions)
 for i in actions:
     if bg.is_valid(BLACK, i):
         print(i)
-
-bg.execute_action(BLACK, (-10, 7))
-bg.render(1)
+"""print("NONUSED:", bg.non_used_dice)
+print("USED:", bg.used_dice)
+bg.execute_action(BLACK, (2, (8, 6)))
+print("NONUSED:", bg.non_used_dice)
+print("USED:", bg.used_dice)
+bg.render(2)
+bg.execute_action(BLACK, (1, (8, 7)))
+print("NONUSED:", bg.non_used_dice)
+print("USED:", bg.used_dice)
+bg.render(3)"""
