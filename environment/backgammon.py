@@ -34,7 +34,12 @@ def initiate_board():
     board[5].update({"count": 2, "color": BLACK})
     board[7].update({"count": 1, "color": WHITE})
     board[8].update({"count": 2, "color": BLACK})
-    
+
+    # A counter for how many has been moved to the bar
+    bar = {WHITE: 0, BLACK: 0}
+    # Only a counter for how many has been beared off
+    off = {WHITE: 0, BLACK: 0}
+
     return board
 
 def bear_off_board_setup():
@@ -43,19 +48,33 @@ def bear_off_board_setup():
     board[1].update({"count": 3, "color": BLACK})
     board[3].update({"count": 3, "color": WHITE})
     board[7].update({"count": 2, "color": WHITE})
-    
-    return board
 
+    # A counter for how many has been moved to the bar
+    bar = {WHITE: 0, BLACK: 0}
+    # Only a counter for how many has been beared off
+    off = {WHITE: 0, BLACK: 0}
+    
+    return board, bar, off
+
+def bar_play_board_setup():
+    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
+    board[2].update({"count": 2, "color": BLACK})
+    board[4].update({"count": 1, "color": BLACK})
+    board[3].update({"count": 1, "color": WHITE})
+    board[6].update({"count": 2, "color": WHITE})
+
+    # A counter for how many has been moved to the bar
+    bar = {WHITE: 2, BLACK: 2}
+    # Only a counter for how many has been beared off
+    off = {WHITE: 0, BLACK: 0}
+    
+    return board, bar, off
 
 class Backgammon:
 
     def __init__(self):
         # Initiates the board to the starting positions
-        self.board = initiate_board()
-        # A counter for how many has been moved to the bar
-        self.bar = {WHITE: 0, BLACK: 0}
-        # Only a counter for how many has been beared off
-        self.off = {WHITE: 0, BLACK: 0}
+        self.board, self.bar, self.off = bar_play_board_setup()
         # The home positions/goal for the pieces before they can bear off
         self.players_home_positions = {WHITE: range(N_SPOTS)[N_SPOTS - N_HOME_POSITIONS:], BLACK: range(N_SPOTS)[:N_HOME_POSITIONS]}
 
@@ -111,13 +130,14 @@ class Backgammon:
             # And onto the board
             if src == BAR:
                 # Check if there are more than two enemies on the target
-                if self.board[target]["count"] > 1 and self.board[target][color] == self.get_opponent_color(color):
+                print(target)
+                if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
                     return False
                 # Check if there are 3 pieces on the spot - if so, then we cannot move
                 elif self.board[target]["count"] == MAX_N_STACK:
                     return False
                 # If the target is out of bounds
-                elif (0 > target) or (target >= N_SPOT):
+                elif (0 > target) or (target >= N_SPOTS):
                     return False
                 # Now I think the wrong targets are removed
                 else:
@@ -198,6 +218,12 @@ class Backgammon:
 
         print(self.off[color])
 
+    def move_from_bar(self, color, action):
+        src, dst = action
+        # Decrement the bar counter
+        self.bar[color] -= 1
+        # Move the piece onto the board
+        self.add_piece_to_dst(color, dst)
         
     def execute_action(self, color, action):
         src, target = action
@@ -209,11 +235,16 @@ class Backgammon:
                 # Adding the opponents piece to the bar and removing it from the target
                 self.knock_out_piece(self.get_opponent_color(color), target)
                 # Move the piece from the source to the target
-                self.move_piece_from_src_to_dest(color, action)
+                if src == BAR:
+                    self.move_from_bar(color, action)
+                else:
+                    self.move_piece_from_src_to_dest(color, action)
             # If the player can bear off (all home) and the target is not in
             # The normal range of spots, then move the player off
             elif self.can_bear_off(color) and target not in range(N_SPOTS):
                 self.move_piece_off(color, action)
+            elif src == BAR:
+                self.move_from_bar(color, action)
             else:
                 # Move the piece from the source to the target
                 self.move_piece_from_src_to_dest(color, action)
@@ -237,14 +268,11 @@ class Backgammon:
 
 
 bg = Backgammon()
-for i in bg.board:
-    print(i)
 
-print()
-for c, s in bg.get_players_positions().items():
-    print("COLOR:", COLORS[c])
-    for i in s:
-        print(i)
-    print()
+bg.render(3)
 
-bg.render(2)
+action = (BAR, 2)
+
+bg.execute_action(BLACK, action)
+
+bg.render(4)
