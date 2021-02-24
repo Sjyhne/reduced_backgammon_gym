@@ -40,7 +40,7 @@ def initiate_board():
     # Only a counter for how many has been beared off
     off = {WHITE: 0, BLACK: 0}
 
-    return board
+    return board, bar, off
 
 def bear_off_board_setup():
     board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
@@ -87,6 +87,12 @@ class Backgammon:
                 players_positions[WHITE].append(i)
             elif i["color"] == BLACK:
                 players_positions[BLACK].append(i)
+
+        if self.bar[WHITE] > 0:
+            players_positions[WHITE].append({"spot": BAR, "count": self.bar[WHITE], "color": WHITE})
+        
+        if self.bar[BLACK] > 0:
+            players_positions[BLACK].append({"spot": BAR, "count": self.bar[BLACK], "color": BLACK})
         
         return players_positions
 
@@ -128,7 +134,7 @@ class Backgammon:
         if self.bar[color] > 0:
             # Then we need to check if the move is moving the piece from the bar
             # And onto the board
-            if src == BAR:
+            if src == BAR and (0 <= target < N_SPOTS):
                 # Check if there are more than two enemies on the target
                 print(target)
                 if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
@@ -249,6 +255,51 @@ class Backgammon:
                 # Move the piece from the source to the target
                 self.move_piece_from_src_to_dest(color, action)
 
+    def generate_single_action(self, src, starting_point, roll):
+        actions = []
+        for i in roll:
+            actions.append((src, starting_point + i))
+        for i in roll:
+            actions.append((src, starting_point - i))
+        
+        return list(set(actions))
+
+    def generate_actions(self, color, roll):
+        # First step must be to get all of the positions of the current player
+        players_positions = self.get_players_positions()[color]
+        spots = [i["spot"] for i in players_positions]
+        print("Spots with pieces: ", spots)
+
+        actions = []
+
+        # For each spot, generate an action with the associated source spot
+        for spot in spots:
+            src = spot
+            # Must check if the source is BAR, then the starting position is either
+            # -1 or 9, depending on color
+            if spot == BAR:
+                # An example would be that if WHITE uses a die of value 1 from BAR
+                # Then it will land on spot 0, therefore -1 is used
+                if color == WHITE:
+                    temp_src = -1
+                    temp_actions = self.generate_single_action(src, temp_src, roll)
+                    actions.extend(temp_actions)
+                # Same here, only black is moving the opposite direction
+                # So the using a die of value 1 means landing on positions 8
+                elif color == BLACK:
+                    temp_src = 9
+                    temp_actions = self.generate_single_action(src, temp_src, roll)
+                    actions.extend(temp_actions)
+            else:
+                temp_actions = self.generate_single_action(src, src, roll)
+                actions.extend(temp_actions)
+            
+        return actions
+
+        # TODO: Remember to handle double throw? Or not..?
+        # TODO: Implement the generation of all actions using the dice throw
+        ...
+
     def render(self, round_nr):
         print(f"                   |-| {round_nr} |-|")
         print("=================================================")
@@ -269,10 +320,14 @@ class Backgammon:
 
 bg = Backgammon()
 
-bg.render(3)
+print("INITIAL BOARD!")
+bg.render(0)
+print(bg.generate_actions(BLACK, (1, 2)))
+print(len(bg.generate_actions(BLACK, (1, 2))))
+actions = bg.generate_actions(BLACK, (1, 2))
+for i in actions:
+    if bg.is_valid(BLACK, i):
+        print(i)
 
-action = (BAR, 2)
-
-bg.execute_action(BLACK, action)
-
-bg.render(4)
+bg.execute_action(BLACK, (-10, 7))
+bg.render(1)
