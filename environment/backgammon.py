@@ -16,6 +16,8 @@ DICE_SIDES = 2
 MAX_N_STACK = 3
 # Chance of acquiring 4 actions when throwing two die of the same eyes
 DOUBLE_CHANCE = 0.3
+# Tokens for the players
+TOKENS = {WHITE: "O", BLACK: "X", None: "-"}
 
 # The board looks like this atm
 # 0    1    2   3   4   5   6   7    8
@@ -30,6 +32,15 @@ def initiate_board():
     board[5].update({"count": 2, "color": BLACK})
     board[7].update({"count": 1, "color": WHITE})
     board[8].update({"count": 2, "color": BLACK})
+    
+    return board
+
+def bear_off_board_setup():
+    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
+    board[0].update({"count": 2, "color": BLACK})
+    board[1].update({"count": 3, "color": BLACK})
+    board[3].update({"count": 3, "color": WHITE})
+    board[7].update({"count": 2, "color": WHITE})
     
     return board
 
@@ -74,7 +85,7 @@ class Backgammon:
     # the innermost of the two places in home position. (1, 1) -> (1, 0) | 1 OFF
     def is_src_furthest_piece(self, color, action):
         src, dst = action
-        player_positions = self.get_players_positions()[color]
+        player_positions = [i["spot"] for i in self.get_players_positions()[color]]
         if color == WHITE:
             if src == min(player_positions):
                 return True
@@ -108,7 +119,7 @@ class Backgammon:
             elif self.can_bear_off(color):
                 # If the target is not 10, then check if the source piece
                 # Is the last piece of all pieces in home
-                if target > N_SPOTS - 1 or target < 0:
+                if target > N_SPOTS - 1 or target < -1:
                     if self.is_src_furthest_piece(color, action):
                         return True
                     else:
@@ -159,11 +170,12 @@ class Backgammon:
         
     def move_piece_off(self, color, action):
         src, _ = action
-
         # Remove piece from src
         self.remove_piece_from_src(color, src)
         # Add piece to "OFF"
         self.off[color] += 1
+
+        print(self.off[color])
 
         
     def execute_action(self, color, action):
@@ -171,7 +183,8 @@ class Backgammon:
         # If the action is true
         if self.is_valid(color, action):
             # Check if there is an opponent piece on the target
-            if self.board[target]["color"] != color:
+            if self.board[target]["color"] == self.get_opponent_color(color) and target >= 0:
+                print("KNOCKOUT")
                 # Adding the opponents piece to the bar and removing it from the target
                 self.knock_out_piece(self.get_opponent_color(color), target)
                 # Move the piece from the source to the target
@@ -179,11 +192,27 @@ class Backgammon:
             # If the player can bear off (all home) and the target is not in
             # The normal range of spots, then move the player off
             elif self.can_bear_off(color) and target not in range(N_SPOTS):
-                # TODO: Implement bear off moves, almost done
-                ...
+                self.move_piece_off(color, action)
             else:
                 # Move the piece from the source to the target
                 self.move_piece_from_src_to_dest(color, action)
+
+    def render(self, round_nr):
+        print(f"                   |-| {round_nr} |-|")
+        print("=================================================")
+        print(f" B: {self.off[BLACK]} | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | W: {self.off[WHITE]}")
+        print("-------------------------------------------------")
+        token_string = f"BAR: {self.bar[BLACK]}|"
+        count_string = f"      |"
+        for i in range(9):
+            token_string += f" {TOKENS[self.board[i]['color']]} |"
+            count_string += f" {self.board[i]['count']} |"
+        token_string += f"BAR: {self.bar[WHITE]}"
+
+        print(token_string)
+        print(count_string)
+        print("=================================================")
+        print("\n")
 
 
 bg = Backgammon()
@@ -197,6 +226,4 @@ for c, s in bg.get_players_positions().items():
         print(i)
     print()
 
-print(bg.can_bear_off(BLACK))
-
-print("ACTION IS TRUE?:", bg.is_valid(BLACK, (2, 8)))
+bg.render(2)
