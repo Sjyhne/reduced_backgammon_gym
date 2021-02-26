@@ -14,6 +14,7 @@ DICE_SIDES = 2
 # Max stack size
 MAX_N_STACK = 4
 # Chance of acquiring 4 actions when throwing two die of the same eyes
+# Works only when the number of DICE_SIDES are limited to 2
 DOUBLE_CHANCE = 0.3
 # Tokens for the players
 TOKENS = {WHITE: "O", BLACK: "X", None: "-"}
@@ -91,8 +92,13 @@ class Backgammon:
     def roll(self):
         self.used_dice = []
         self.non_used_dice = []
-        r1 = random.choice([1, 1, 1, 2, 2, 2, 2, 2, 2, 2])
-        r2 = random.choice([1, 1, 1, 1, 1, 1, 1, 2, 2, 2])
+        if DICE_SIDES == 2:
+            r1 = [1 for i in range(int(DOUBLE_CHANCE * 100))] + [2 for i in range(int(100 - DOUBLE_CHANCE * 100))]
+            r2 = [1 for i in range(int(100 - DOUBLE_CHANCE * 100))] + [2 for i in range(int(DOUBLE_CHANCE * 100))]
+        else:
+            r1 = random.choice(range(1, DICE_SIDES + 1))
+            r2 = random.choice(range(1, DICE_SIDES + 1))
+
         if r1 == r2:
             self.non_used_dice = [r1 for i in range(4)]
         else:
