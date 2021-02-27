@@ -11,10 +11,18 @@ class BackgammonEnv(gym.Env):
   def __init__(self):
     self.gym = Backgammon()
     
-    low, high = self.gym.get_observation_space()
-    low = np.array(low)
-    high = np.array(high)
-    self.observation_space = spaces.Box(low=low, high=high, dtype=np.int8)
+    # OBSERVATION
+    obs_low, obs_high = self.gym.get_observation_space()
+    obs_low = np.array(obs_low)
+    obs_high = np.array(obs_high)
+    self.observation_space = spaces.Box(low=obs_low, high=obs_high, dtype=np.int8)
+
+    # ACTION
+    action_low, action_high = self.gym.get_action_space()
+    action_low = np.array(action_low)
+    action_high = np.array(action_high)
+    self.action_space = spaces.Box(low=action_low, high=action_high, dtype=np.int8)
+
 
   def step(self, action):
     ...

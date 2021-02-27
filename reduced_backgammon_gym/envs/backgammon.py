@@ -398,6 +398,15 @@ class Backgammon:
         print(count_string)
         print("=============================================")
 
+    def get_action_space(self):
+        """
+            The action space is defined by the number of spots a piece can move to other spots
+        """
+        low = [0 for i in range(2)]
+        high = [N_SPOTS + 1 for i in range(2)]
+        return low, high
+        ...
+
     def get_observation_space(self):
         """
             The observation space is defined from the number of spots, the bar, the possible die rolls and the turn of the player

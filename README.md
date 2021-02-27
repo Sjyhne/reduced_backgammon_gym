@@ -16,5 +16,5 @@ A reduced backgammon gym, making it viable for classical reinforcement learning
 
 ### ACTION SPACE
 
-12: (Src location) 0, 1, 2, 3, 4, 5, 6, 7, BAR (Value: 9)
-13: (Dst location) 0, 1, 2, 3, 4, 5, 6, 7, OFF (Value: 9)
+12: (Src location) 0, 1, 2, 3, 4, 5, 6, BAR (Value: 8)
+13: (Dst location) 0, 1, 2, 3, 4, 5, 6, OFF (Value: 8)
