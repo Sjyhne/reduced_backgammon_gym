@@ -1,0 +1,1 @@
+from reduced_backgammon_gym.envs.backgammon_env import BackgammonEnv
