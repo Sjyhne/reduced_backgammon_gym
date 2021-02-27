@@ -1,4 +1,5 @@
 import random
+import itertools
 
 # Variables for the color of the players
 WHITE, BLACK = 0, 1
@@ -93,8 +94,8 @@ class Backgammon:
         self.used_dice = []
         self.non_used_dice = []
         if DICE_SIDES == 2:
-            r1 = [1 for i in range(int(DOUBLE_CHANCE * 100))] + [2 for i in range(int(100 - DOUBLE_CHANCE * 100))]
-            r2 = [1 for i in range(int(100 - DOUBLE_CHANCE * 100))] + [2 for i in range(int(DOUBLE_CHANCE * 100))]
+            r1 = random.choice([1 for i in range(int(DOUBLE_CHANCE * 100))] + [2 for i in range(int(100 - DOUBLE_CHANCE * 100))])
+            r2 = random.choice([1 for i in range(int(100 - DOUBLE_CHANCE * 100))] + [2 for i in range(int(DOUBLE_CHANCE * 100))])
         else:
             r1 = random.choice(range(1, DICE_SIDES + 1))
             r2 = random.choice(range(1, DICE_SIDES + 1))
@@ -397,11 +398,44 @@ class Backgammon:
         print(count_string)
         print("=============================================")
 
+    def get_observation_space(self):
+        """
+            The observation space is defined from the number of spots, the bar, the possible die rolls and the turn of the player
+            Therefore we need to calculate these by using the static variables on top
+        """
+        spots_low = [0 for i in range(N_SPOTS)]
+        spots_high = [MAX_N_STACK * 2 + 1 for i in range(N_SPOTS)]
 
+        bar_low = [0 for i in range(2)]
+        bar_high = [1 for i in range(2)]
 
-# TODO: TEST SKIP
-# TODO: SET MAX HEIGHT 4 or 5 OR REMOVE 1 PIECE PER PLAYER
+        roll_low = [0]
+        roll_high = [len(set(itertools.permutations([range(1, DICE_SIDES + 1), 2]))) - 1]
+        
+        player_turn_low = [0]
+        player_turn_high = [1]
 
+        low = []
+        high = []
+
+        # SPOTS
+        low.extend(spots_low)
+        high.extend(spots_high)
+        
+        # BAR
+        low.extend(bar_low)
+        high.extend(bar_high)
+
+        # ROLL
+        low.extend(roll_low)
+        high.extend(roll_high)
+
+        # PLAYER TURN
+        low.extend(player_turn_low)
+        high.extend(player_turn_high)
+
+        return low, high
+"""
 bg = Backgammon()
 agent = WHITE
 bg.render(0)
@@ -434,3 +468,4 @@ for r in range(1000):
         break
     agent = bg.get_opponent_color(agent)
     print("\n")
+"""

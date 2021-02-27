@@ -14,28 +14,6 @@ import random
 
 
 
-rep = np.zeros((9, 9, 9, 9, 9, 9, 9, 2, 2, 3, 2, 8, 8), np.float16)
+rep = np.zeros((9, 9, 9, 9, 9, 9, 9, 2, 2, 3, 2, 8, 8), np.int8)
 
 print((rep.size * rep.itemsize) / (1024 ** 2))
-
-DOUBLE_CHANCE = 0.3
-
-r1 = [1 for i in range(int(DOUBLE_CHANCE * 100))] + [2 for i in range(int(100 - DOUBLE_CHANCE * 100))]
-r2 = [1 for i in range(int(100 - DOUBLE_CHANCE * 100))] + [2 for i in range(int(DOUBLE_CHANCE * 100))]
-
-count1 = 0
-count2 = 0
-
-nr = 1000000
-
-for i in range(nr):
-    pick = random.choice(r1)
-    if pick == 1:
-        count1 += 1
-    else:
-        count2 += 1
-
-print(count1)
-print(count2)
-print(count1 / nr)
-print(count2 / nr)
