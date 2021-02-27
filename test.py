@@ -12,6 +12,17 @@ import random
     13: (Dst location) 0, 1, 2, 3, 4, 5, 6, 7, OFF (Value: 8)
 """
 
+"""
+    OBSERVATION SPACE
+
+    0: 0 -> 0 spillere, 1 - 4 -> 1 - 4 hvite spillere, 5 - 8 -> 1 - 4 svarte spillere (Value: 9)
+    1: ...
+    6: 0 -> 0 spillere, 1 - 4 -> 1 - 4 hvite spillere, 5 - 8 -> 1 - 4 svarte spillere (Value: 9)
+    7: (Hvit bar) 0 -> 0 spillere, 1 eller flere hvite spillere (Value: 2)
+    8: (Svart bar) 0 -> 0 spillere, 1 eller flere svarte spillere (Value: 2)
+    9: (Terning) 0 -> (1, 1), 1 -> (1, 2), 2 -> (2, 2) | Alle permutations for antall sider på terningen som er brukt | (Value: 3)
+    10: (Player turn) 0 -> Hvit, 1 -> Svart (Value: 2)
+"""
 
 
 rep = np.zeros((9, 9, 9, 9, 9, 9, 9, 2, 2, 3, 2, 8, 8), np.int8)
