@@ -45,10 +45,15 @@ pip install -e .
 Below are the customizable parameters for the creation of the board with a cohering explanation:
 
 **n_spots**: The total number of narrow triangles on the board
+
 **n_home_positions**: The total number of home positions each players gets
+
 **n_pieces**: The number of pieces each player has on the board
+
 **dice_sides**: Number of sides on the dice used
+
 **max_n_stack**: The max number of pieces that can be stacked ontop of each other on the board
+
 **double_chance**: The chance of acquiring two die of the same value (Only applies when the dice_sides are set to 2)
 
 The encoding used to represent the states of the board is described below:
