@@ -69,6 +69,13 @@ class Backgammon:
 
         return board, bar, off
 
+    def custom_board(self):
+        """ 
+            Use this function for creating your own custom board for the backgammon game
+            Take inspiration from the function above
+        """
+        ...
+
     def roll(self):
         self.used_dice = []
         
