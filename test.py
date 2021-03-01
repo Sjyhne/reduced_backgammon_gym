@@ -28,3 +28,10 @@ import random
 rep = np.zeros((9, 9, 9, 9, 9, 9, 9, 2, 2, 3, 2, 8, 8), np.int8)
 
 print((rep.size * rep.itemsize) / (1024 ** 2))
+
+
+t = [(1, 2), (2, 2), (2, 1)]
+
+t = sorted(t)
+
+print(t)

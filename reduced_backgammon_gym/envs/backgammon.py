@@ -26,7 +26,6 @@ BAR = {WHITE: -100, BLACK: 100}
 # 0    1    2   3   4   5   6   7    8
 # HW | HW | S | S | S | S | S | HB | HB
 
-
 def initiate_board():
     board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
     board[0].update({"count": 2, "color": WHITE})
@@ -87,12 +86,22 @@ class Backgammon:
     def __init__(self):
         # Initiates the board to the starting positions
         self.board, self.bar, self.off = initiate_board()
+
         # The home positions/goal for the pieces before they can bear off
         self.players_home_positions = {WHITE: range(N_SPOTS)[N_SPOTS - N_HOME_POSITIONS:], BLACK: range(N_SPOTS)[:N_HOME_POSITIONS]}
 
+        # Just picking a random starting agent - Should probably be decided by throwing the dice
+        # And choosing the one with the higher number - But ultimately it is just the same as
+        # Picking the starting agent at random
+        self.starting_agent = random.choice([WHITE, BLACK])
+
+        self.dice = self.roll()
+
     def roll(self):
         self.used_dice = []
+        
         self.non_used_dice = []
+
         if DICE_SIDES == 2:
             r1 = random.choice([1 for i in range(int(DOUBLE_CHANCE * 100))] + [2 for i in range(int(100 - DOUBLE_CHANCE * 100))])
             r2 = random.choice([1 for i in range(int(100 - DOUBLE_CHANCE * 100))] + [2 for i in range(int(DOUBLE_CHANCE * 100))])
@@ -105,6 +114,7 @@ class Backgammon:
         else:
             self.non_used_dice = [r1, r2]
 
+        return (r1, r2)
     
     def get_players_positions(self):
         players_positions = {WHITE: [], BLACK: []}
@@ -444,6 +454,37 @@ class Backgammon:
         high.extend(player_turn_high)
 
         return low, high
+
+    def get_current_observation(self, current_player):
+        """
+            0 -> 0 Pieces 
+            1 - (MAX_N_STACK) -> 1 - (MAX_N_STACK) White Pieces
+            MAX_N_STACK + 1 - 2*MAX_N_STACK + 1 -> MAX_N_STACK + 1 - 2*MAX_N_STACK + 1 Black Pieces
+        """
+        observation = []
+        for spot in self.board:
+            if spot["color"] == WHITE:
+                observation.append(spot["count"])
+            elif spot["color"] == BLACK:
+                observation.append(spot["count"] + MAX_N_STACK)
+            else:
+                observation.append(spot["count"])
+
+        observation.append(self.bar[WHITE])
+        observation.append(self.bar[BLACK])
+
+        dice_combinations = list(itertools.combinations_with_replacement(range(1, DICE_SIDES + 1), 2))
+        # sorted sorts the items and the tuple then makes it a tuple - Which is needed for
+        # finding the tuple in the dice_combinations list of tuples.
+        observation.append(dice_combinations.index(tuple(sorted(self.dice))))
+
+        observation.append(current_player)
+        
+        return observation
+
+bg = Backgammon()
+print(bg.get_current_observation(WHITE))
+
 """
 bg = Backgammon()
 agent = WHITE
