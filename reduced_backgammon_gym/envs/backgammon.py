@@ -2,112 +2,84 @@ import random
 import itertools
 
 # Variables for the color of the players
-WHITE, BLACK = 0, 1
-COLORS = {WHITE: "White", BLACK: "Black"}
+#WHITE, BLACK = 0, 1
+# COLORS = {WHITE: "White", BLACK: "Black"}
 # The number of spots each player has as home spots
-N_HOME_POSITIONS = 2
+# N_HOME_POSITIONS = 2
 # Total number of spots, disregarding the BAR and OFF
-N_SPOTS = 7
+# N_SPOTS = 7
 # Number of pieces per player
-N_PIECES = 4
+# N_PIECES = 4
 # Number of sides on dice
-DICE_SIDES = 2
+# DICE_SIDES = 2
 # Max stack size
-MAX_N_STACK = 4
+# MAX_N_STACK = 4
 # Chance of acquiring 4 actions when throwing two die of the same eyes
 # Works only when the number of DICE_SIDES are limited to 2
-DOUBLE_CHANCE = 0.3
+# DOUBLE_CHANCE = 0.3
 # Tokens for the players
-TOKENS = {WHITE: "O", BLACK: "X", None: "-"}
+#TOKENS = {WHITE: "O", BLACK: "X", None: "-"}
 # Integer for representing the BAR location
-BAR = {WHITE: -100, BLACK: 100}
+#BAR = {WHITE: -100, BLACK: 100}
 
 # The board looks like this atm
 # 0    1    2   3   4   5   6   7    8
 # HW | HW | S | S | S | S | S | HB | HB
 
-def initiate_board():
-    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
-    board[0].update({"count": 2, "color": WHITE})
-    board[2].update({"count": 2, "color": BLACK})
-    board[4].update({"count": 2, "color": WHITE})
-    board[6].update({"count": 2, "color": BLACK})
-
-    # A counter for how many has been moved to the bar
-    bar = {WHITE: 0, BLACK: 0}
-    # Only a counter for how many has been beared off
-    off = {WHITE: 0, BLACK: 0}
-
-    return board, bar, off
-
-def skip_board():
-    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
-    board[0].update({"count": 2, "color": WHITE})
-    board[1].update({"count": 2, "color": BLACK})
-    board[2].update({"count": 2, "color": BLACK})
-
-    # A counter for how many has been moved to the bar
-    bar = {WHITE: 0, BLACK: 0}
-    # Only a counter for how many has been beared off
-    off = {WHITE: 0, BLACK: 0}
-
-    return board, bar, off
-
-def bear_off_board_setup():
-    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
-    board[0].update({"count": 2, "color": BLACK})
-    board[1].update({"count": 3, "color": BLACK})
-    board[3].update({"count": 3, "color": WHITE})
-    board[6].update({"count": 2, "color": WHITE})
-
-    # A counter for how many has been moved to the bar
-    bar = {WHITE: 0, BLACK: 0}
-    # Only a counter for how many has been beared off
-    off = {WHITE: 0, BLACK: 0}
-    
-    return board, bar, off
-
-def bar_play_board_setup():
-    board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
-    board[2].update({"count": 2, "color": BLACK})
-    board[4].update({"count": 1, "color": BLACK})
-    board[3].update({"count": 1, "color": WHITE})
-    board[6].update({"count": 2, "color": WHITE})
-
-    # A counter for how many has been moved to the bar
-    bar = {WHITE: 2, BLACK: 2}
-    # Only a counter for how many has been beared off
-    off = {WHITE: 0, BLACK: 0}
-    
-    return board, bar, off
-
 class Backgammon:
 
-    def __init__(self):
+    def __init__(self, n_spots=7, n_home_positions=2, n_pieces=4, dice_sides=2, max_n_stack=4, double_chance=0.3):
+
+        self.n_spots = n_spots
+        self.n_home_positions = n_home_positions
+        self.n_pieces = n_pieces
+        self.dice_sides = dice_sides
+        self.max_n_stack = max_n_stack
+        self.double_chance = double_chance
+
+        self.white, self.black = 0, 1
+        self.colors = {self.white: "White", self.black: "Black"}
+        self.tokens = {self.white: "O", self.black: "X", None: "-"}
+        self.bar_spots = {self.white: -100, self.black: 100}
+
         # Initiates the board to the starting positions
-        self.board, self.bar, self.off = initiate_board()
+        self.board, self.bar, self.off = self.initiate_board()
 
         # The home positions/goal for the pieces before they can bear off
-        self.players_home_positions = {WHITE: range(N_SPOTS)[N_SPOTS - N_HOME_POSITIONS:], BLACK: range(N_SPOTS)[:N_HOME_POSITIONS]}
+        self.players_home_positions = {self.white: range(self.n_spots)[self.n_spots - self.n_home_positions:], self.black: range(self.n_spots)[:self.n_home_positions]}
 
         # Just picking a random starting agent - Should probably be decided by throwing the dice
         # And choosing the one with the higher number - But ultimately it is just the same as
         # Picking the starting agent at random
-        self.starting_agent = random.choice([WHITE, BLACK])
+        self.starting_agent = random.choice([self.white, self.black])
 
         self.dice = self.roll()
+
+    def initiate_board(self):
+        board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(self.n_spots))]
+        board[0].update({"count": 2, "color": self.white})
+        board[2].update({"count": 2, "color": self.black})
+        board[4].update({"count": 2, "color": self.white})
+        board[6].update({"count": 2, "color": self.black})
+
+        # A counter for how many has been moved to the bar
+        bar = {self.white: 0, self.black: 0}
+        # Only a counter for how many has been beared off
+        off = {self.white: 0, self.black: 0}
+
+        return board, bar, off
 
     def roll(self):
         self.used_dice = []
         
         self.non_used_dice = []
 
-        if DICE_SIDES == 2:
-            r1 = random.choice([1 for i in range(int(DOUBLE_CHANCE * 100))] + [2 for i in range(int(100 - DOUBLE_CHANCE * 100))])
-            r2 = random.choice([1 for i in range(int(100 - DOUBLE_CHANCE * 100))] + [2 for i in range(int(DOUBLE_CHANCE * 100))])
+        if self.dice_sides == 2:
+            r1 = random.choice([1 for i in range(int(self.double_chance * 100))] + [2 for i in range(int(100 - self.double_chance * 100))])
+            r2 = random.choice([1 for i in range(int(100 - self.double_chance * 100))] + [2 for i in range(int(self.double_chance * 100))])
         else:
-            r1 = random.choice(range(1, DICE_SIDES + 1))
-            r2 = random.choice(range(1, DICE_SIDES + 1))
+            r1 = random.choice(range(1, self.dice_sides + 1))
+            r2 = random.choice(range(1, self.dice_sides + 1))
 
         if r1 == r2:
             self.non_used_dice = [r1 for i in range(4)]
@@ -117,19 +89,19 @@ class Backgammon:
         return (r1, r2)
     
     def get_players_positions(self):
-        players_positions = {WHITE: [], BLACK: []}
+        players_positions = {self.white: [], self.black: []}
         # Loops and adds them to their respective list
         for i in self.board:
-            if i["color"] == WHITE:
-                players_positions[WHITE].append(i)
-            elif i["color"] == BLACK:
-                players_positions[BLACK].append(i)
+            if i["color"] == self.white:
+                players_positions[self.white].append(i)
+            elif i["color"] == self.black:
+                players_positions[self.black].append(i)
 
-        if self.bar[WHITE] > 0:
-            players_positions[WHITE].append({"spot": BAR[WHITE], "count": self.bar[WHITE], "color": WHITE})
+        if self.bar[self.white] > 0:
+            players_positions[self.white].append({"spot": self.bar_spots[self.white], "count": self.bar[self.white], "color": self.white})
         
-        if self.bar[BLACK] > 0:
-            players_positions[BLACK].append({"spot": BAR[BLACK], "count": self.bar[BLACK], "color": BLACK})
+        if self.bar[self.black] > 0:
+            players_positions[self.black].append({"spot": self.bar_spots[self.black], "count": self.bar[self.black], "color": self.black})
         
         return players_positions
 
@@ -152,7 +124,7 @@ class Backgammon:
     def is_src_furthest_piece(self, color, action):
         _, (src, dst) = action
         player_positions = [i["spot"] for i in self.get_players_positions()[color]]
-        if color == WHITE:
+        if color == self.white:
             # It is min() for white because their home are at end of board
             if src == min(player_positions):
                 return True
@@ -172,32 +144,28 @@ class Backgammon:
         # Must check if the player has a piece on the bar, if he has, then he must
         # Move that piece first.
         # Have to check if the action is within bounds of the board
-        if color == WHITE and target > src:
+        if color == self.white and target > src:
             if self.bar[color] > 0:
                 # Then we need to check if the move is moving the piece from the bar
                 # And onto the board
-                if src == BAR[WHITE] and (0 <= target < N_SPOTS):
+                if src == self.bar[self.white] and (0 <= target < self.n_spots):
                     # Check if there are more than two enemies on the target
                     if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
                         return False
                     # Check if there are 3 pieces on the spot - if so, then we cannot move
-                    elif self.board[target]["count"] == MAX_N_STACK:
+                    elif self.board[target]["count"] == self.max_n_stack:
                         return False
-                    # If the target is out of bounds
-    #                elif (0 > target) or (target >= N_SPOTS):
-    #                    return False
-                    # Now I think the wrong targets are removed
                     else:
                         return True
 
             elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
-                if 0 <= target < N_SPOTS:
+                if 0 <= target < self.n_spots:
                     # If the target is within board limits, then we have to check
                     # If the target has two or more enemies, or the target reaches
                     # The upper limit of how many pieces can be stacked (3)
                     if self.board[target]["color"] != color and self.board[target]["count"] > 1:
                         return False
-                    elif self.board[target]["color"] == color and self.board[target]["count"] == MAX_N_STACK:
+                    elif self.board[target]["color"] == color and self.board[target]["count"] == self.max_n_stack:
                         return False
                     else:
                         return True
@@ -205,9 +173,9 @@ class Backgammon:
                 # Then we have to check whether or not the player can
                 # Bear off
                 elif self.can_bear_off(color):
-                    # If the target is not N_SPOTS, then check if the source piece
+                    # If the target is not self.n_spots, then check if the source piece
                     # Is the last piece of all pieces in home
-                    if target > N_SPOTS or target < -1:
+                    if target > self.n_spots or target < -1:
                         if self.is_src_furthest_piece(color, action):
                             return True
                         else:
@@ -216,33 +184,28 @@ class Backgammon:
                     return True
 
             return False
-        elif color == BLACK and target < src:
-            print(target, src)
+        elif color == self.black and target < src:
             if self.bar[color] > 0:
                 # Then we need to check if the move is moving the piece from the bar
                 # And onto the board
-                if src == BAR[BLACK] and (0 <= target < N_SPOTS):
+                if src == self.bar_spots[self.black] and (0 <= target < self.n_spots):
                     # Check if there are more than two enemies on the target
                     if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
                         return False
                     # Check if there are 3 pieces on the spot - if so, then we cannot move
-                    elif self.board[target]["count"] == MAX_N_STACK:
+                    elif self.board[target]["count"] == self.max_n_stack:
                         return False
-                    # If the target is out of bounds
-    #                elif (0 > target) or (target >= N_SPOTS):
-    #                    return False
-                    # Now I think the wrong targets are removed
                     else:
                         return True
 
             elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
-                if 0 <= target < N_SPOTS:
+                if 0 <= target < self.n_spots:
                     # If the target is within board limits, then we have to check
                     # If the target has two or more enemies, or the target reaches
                     # The upper limit of how many pieces can be stacked (3)
                     if self.board[target]["color"] != color and self.board[target]["count"] > 1:
                         return False
-                    elif self.board[target]["color"] == color and self.board[target]["count"] == MAX_N_STACK:
+                    elif self.board[target]["color"] == color and self.board[target]["count"] == self.max_n_stack:
                         return False
                     else:
                         return True
@@ -250,9 +213,9 @@ class Backgammon:
                 # Then we have to check whether or not the player can
                 # Bear off
                 elif self.can_bear_off(color):
-                    # If the target is not N_SPOTS, then check if the source piece
+                    # If the target is not self.n_spots, then check if the source piece
                     # Is the last piece of all pieces in home
-                    if target > N_SPOTS or target < -1:
+                    if target > self.n_spots or target < -1:
                         if self.is_src_furthest_piece(color, action):
                             return True
                         else:
@@ -265,10 +228,10 @@ class Backgammon:
             return False
 
     def get_opponent_color(self, color):
-        if color == WHITE:
-            return BLACK
+        if color == self.white:
+            return self.black
         else:
-            return WHITE
+            return self.white
 
     def knock_out_piece(self, color, target):
         # Adding piece to the bar
@@ -324,17 +287,17 @@ class Backgammon:
             # Check if there is an opponent piece on the target
             # If the player can bear off (all home) and the target is not in
             # The normal range of spots, then move the player off
-            if self.can_bear_off(color) and target not in range(N_SPOTS):
+            if self.can_bear_off(color) and target not in range(self.n_spots):
                 self.move_piece_off(color, action)
             elif self.board[target]["color"] == self.get_opponent_color(color) and self.board[target]["count"] == 1:
                 # Adding the opponents piece to the bar and removing it from the target
                 self.knock_out_piece(self.get_opponent_color(color), target)
                 # Move the piece from the source to the target
-                if src == BAR[color]:
+                if src == self.bar_spots[color]:
                     self.move_from_bar(color, action)
                 else:
                     self.move_piece_from_src_to_dest(color, action)
-            elif src == BAR[color]:
+            elif src == self.bar_spots[color]:
                 self.move_from_bar(color, action)
             else:
                 # Move the piece from the source to the target
@@ -368,17 +331,17 @@ class Backgammon:
             src = spot
             # Must check if the source is BAR, then the starting position is either
             # -1 or 8, depending on color
-            if src == BAR[color]:
+            if src == self.bar_spots[color]:
                 # An example would be that if WHITE uses a die of value 1 from BAR
                 # Then it will land on spot 0, therefore -1 is used
-                if color == WHITE:
+                if color == self.white:
                     temp_src = -1
                     temp_actions = self.generate_single_action(src, temp_src, roll)
                     actions.extend(temp_actions)
                 # Same here, only black is moving the opposite direction
                 # So the using a die of value 1 means landing on positions 8
-                elif color == BLACK:
-                    temp_src = N_SPOTS
+                elif color == self.black:
+                    temp_src = self.n_spots
                     temp_actions = self.generate_single_action(src, temp_src, roll)
                     actions.extend(temp_actions)
             # If the src spot is not the bar, then nothing extra needs to be 
@@ -393,15 +356,15 @@ class Backgammon:
         print(f"BLACK              ROUND: {round_nr}           WHITE")
         print("=============================================")
         #print(" B: {} | 0 | 1 | 2 | 3 | 4 | 5 | 6 | W: {}".format(self.off[BLACK], self.off[WHITE]))
-        spot_string = "OFF: {}|".format(self.off[BLACK])
-        token_string = f"WBAR:{self.bar[WHITE]}|"
+        spot_string = "OFF: {}|".format(self.off[self.black])
+        token_string = f"WBAR:{self.bar[self.white]}|"
         count_string = f"      |"
-        for i in range(N_SPOTS):
-            token_string += f" {TOKENS[self.board[i]['color']]} |"
+        for i in range(self.n_spots):
+            token_string += f" {self.tokens[self.board[i]['color']]} |"
             count_string += f" {self.board[i]['count']} |"
             spot_string += f" {i} |"
-        spot_string += "OFF: {}".format(self.off[WHITE])
-        token_string += f"BBAR:{self.bar[BLACK]}"
+        spot_string += "OFF: {}".format(self.off[self.white])
+        token_string += f"BBAR:{self.bar[self.black]}"
         print(spot_string)
         print("---------------------------------------------")
         print(token_string)
@@ -412,7 +375,7 @@ class Backgammon:
         """
             The action space is defined by the number of spots a piece can move to other spots
         """
-        nvec = [N_SPOTS + 1 for i in range(2)]
+        nvec = [self.n_spots + 1 for i in range(2)]
         return nvec
 
     def get_observation_space(self):
@@ -420,9 +383,9 @@ class Backgammon:
             The observation space is defined from the number of spots, the bar, the possible die rolls and the turn of the player
             Therefore we need to calculate these by using the static variables on top
         """
-        spots = [MAX_N_STACK * 2 + 1 for i in range(N_SPOTS)]
+        spots = [self.max_n_stack * 2 + 1 for i in range(self.n_spots)]
         bar = [2 for i in range(2)]
-        roll = [len(list(itertools.combinations_with_replacement(range(1, DICE_SIDES + 1), 2)))]
+        roll = [len(list(itertools.combinations_with_replacement(range(1, self.dice_sides + 1), 2)))]
         player_turn = [2]
 
         nvec = []
@@ -441,26 +404,26 @@ class Backgammon:
     def get_current_observation(self, current_player):
         """
             0 -> 0 Pieces 
-            1 - (MAX_N_STACK) -> 1 - (MAX_N_STACK) White Pieces
-            MAX_N_STACK + 1 - 2*MAX_N_STACK + 1 -> MAX_N_STACK + 1 - 2*MAX_N_STACK + 1 Black Pieces
+            1 - (self.max_n_stack) -> 1 - (self.max_n_stack) White Pieces
+            self.max_n_stack + 1 - 2*self.max_n_stack + 1 -> self.max_n_stack + 1 - 2*self.max_n_stack + 1 Black Pieces
         """
         observation = []
         for spot in self.board:
-            if spot["color"] == WHITE:
+            if spot["color"] == self.white:
                 observation.append(spot["count"])
-            elif spot["color"] == BLACK:
-                observation.append(spot["count"] + MAX_N_STACK)
+            elif spot["color"] == self.black:
+                observation.append(spot["count"] + self.max_n_stack)
             else:
                 observation.append(spot["count"])
 
         # self.bar[COLOR] returns the count of how many are on the bar
         # Therefore we need to change it to only indicating whether there are zero, or 1 or more
         # On the bar for each color
-        observation.append(0 if self.bar[WHITE] == 0 else 1)
-        observation.append(0 if self.bar[BLACK] == 0 else 1)
+        observation.append(0 if self.bar[self.white] == 0 else 1)
+        observation.append(0 if self.bar[self.black] == 0 else 1)
 
         # combination_with_replacements returns the perfect values for our case
-        dice_combinations = list(itertools.combinations_with_replacement(range(1, DICE_SIDES + 1), 2))
+        dice_combinations = list(itertools.combinations_with_replacement(range(1, self.dice_sides + 1), 2))
         # sorted sorts the items and the tuple then makes it a tuple - Which is needed for
         # finding the tuple in the dice_combinations list of tuples.
         observation.append(dice_combinations.index(tuple(sorted(self.dice))))
@@ -469,40 +432,87 @@ class Backgammon:
         
         return observation
 
-bg = Backgammon()
-print(bg.get_current_observation(WHITE))
+
+if __name__ == '__main__':
+    bg = Backgammon()
+    print(bg.get_current_observation(0))
+
+    
+    bg = Backgammon()
+    agent = 0
+    bg.render(0)
+    for r in range(50):
+        bg.roll()
+        print("AGENT:", bg.colors[agent])
+        print("ROLL:", bg.non_used_dice)
+        for _ in bg.non_used_dice:
+            actions = bg.generate_actions(agent, bg.non_used_dice)
+            print("ACTIONS:", actions)
+            print("VALID ACTIONS")
+            for a in actions:
+                if bg.is_valid(agent, a):
+                    print(a)
+            executed = False
+            for _ in actions:
+                action = random.choice(actions)
+                executed = bg.execute_action(agent, action)
+                if executed:
+                    print("ACTION DONE:", action)
+                    break
+                else:
+                    print("ACTION NOT DONE:", action)
+                    actions.remove(action)
+            print("LEN NON USED DICE:", len(bg.non_used_dice))
+            
+        bg.render(r)
+        if bg.off[agent] == bg.n_pieces:
+            print(bg.colors[agent], "WON!")
+            break
+        agent = bg.get_opponent_color(agent)
+        print("\n")
+    
+
 
 """
-bg = Backgammon()
-agent = WHITE
-bg.render(0)
-for r in range(1000):
-    bg.roll()
-    print("AGENT:", COLORS[agent])
-    print("ROLL:", bg.non_used_dice)
-    for _ in bg.non_used_dice:
-        actions = bg.generate_actions(agent, bg.non_used_dice)
-        print("ACTIONS:", actions)
-        print("VALID ACTIONS")
-        for a in actions:
-            if bg.is_valid(agent, a):
-                print(a)
-        executed = False
-        for _ in actions:
-            action = random.choice(actions)
-            executed = bg.execute_action(agent, action)
-            if executed:
-                print("ACTION DONE:", action)
-                break
-            else:
-                print("ACTION NOT DONE:", action)
-                actions.remove(action)
-        print("LEN NON USED DICE:", len(bg.non_used_dice))
+
+    def skip_board(self):
+        board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
+        board[0].update({"count": 2, "color": WHITE})
+        board[1].update({"count": 2, "color": BLACK})
+        board[2].update({"count": 2, "color": BLACK})
+
+        # A counter for how many has been moved to the bar
+        bar = {WHITE: 0, BLACK: 0}
+        # Only a counter for how many has been beared off
+        off = {WHITE: 0, BLACK: 0}
+
+        return board, bar, off
+
+    def bear_off_board_setup(self):
+        board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
+        board[0].update({"count": 2, "color": BLACK})
+        board[1].update({"count": 3, "color": BLACK})
+        board[3].update({"count": 3, "color": WHITE})
+        board[6].update({"count": 2, "color": WHITE})
+
+        # A counter for how many has been moved to the bar
+        bar = {WHITE: 0, BLACK: 0}
+        # Only a counter for how many has been beared off
+        off = {WHITE: 0, BLACK: 0}
         
-    bg.render(r)
-    if bg.off[agent] == N_PIECES:
-        print(COLORS[agent], "WON!")
-        break
-    agent = bg.get_opponent_color(agent)
-    print("\n")
+        return board, bar, off
+
+    def bar_play_board_setup(self):
+        board = [{"spot": k, "count": 0, "color": None} for k, i in enumerate(range(N_SPOTS))]
+        board[2].update({"count": 2, "color": BLACK})
+        board[4].update({"count": 1, "color": BLACK})
+        board[3].update({"count": 1, "color": WHITE})
+        board[6].update({"count": 2, "color": WHITE})
+
+        # A counter for how many has been moved to the bar
+        bar = {WHITE: 2, BLACK: 2}
+        # Only a counter for how many has been beared off
+        off = {WHITE: 0, BLACK: 0}
+        
+        return board, bar, off
 """

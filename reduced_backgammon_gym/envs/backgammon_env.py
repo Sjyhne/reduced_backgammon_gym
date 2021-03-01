@@ -2,14 +2,18 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
+import random
 
-from backgammon import Backgammon, WHITE, BLACK
+from reduced_backgammon_gym.envs.backgammon import Backgammon
 
 class BackgammonEnv(gym.Env):
   metadata = {'render.modes': ['human']}
 
-  def __init__(self):
-    self.gym = Backgammon()
+  def __init__(self, max_episodes=10_000):
+
+    self.gym = Backgammon(n_spots=7, n_home_positions=2, n_pieces=4, dice_sides=2, max_n_stack=4, double_chance=0.3)
+
+    self.max_episodes = max_episodes
     
     # OBSERVATION
     obs_nvec = self.gym.get_observation_space()
@@ -26,7 +30,10 @@ class BackgammonEnv(gym.Env):
 
   # Returns all "possible" actions based on the dice roll
   def get_actions(self):
-    return self.gym.generate_actions(self.current_agent, self.dice)
+    return self.gym.generate_actions(self.current_agent, self.gym.non_used_dice)
+
+  def get_n_actions(self):
+    return len(self.gym.non_used_dice)
 
   # Steps through and environment - An agent will be able to step through the environment
   # Several times before it is the other players turn
@@ -35,18 +42,47 @@ class BackgammonEnv(gym.Env):
       Returns True if the action was "accepted" and executed
       Returns False if the action was "declined" and not executed
     """
-    return self.gym.execute_action(action)
+
+    reward = 0
+
+    done = False
+
+    winner = None
+
+    executed = False
+
+    if self.gym.is_valid(self.current_agent, action):
+      executed = self.gym.execute_action(self.current_agent, action)
+    else:
+      reward = -0.2
+
+    current_observation = self.gym.get_current_observation(self.current_agent)
+    
+    if self.round_nr == self.max_episodes:
+      done = True
+    elif self.gym.off[self.current_agent] == self.gym.n_pieces:
+      winner = self.current_agent
+      done = True
+      reward = 1
+
+    return current_observation, reward, done, winner, executed
+
+  def action_is_valid(self, action):
+    return self.gym.is_valid(action)
   
   # Resets the environment/gym
   def reset(self):
     self.gym = Backgammon()
     self.current_agent = self.gym.starting_agent
+    return self.gym.get_current_observation(self.current_agent)
 
   # Changes the players turn and increments the round number
   def change_player_turn(self):
     self.round_nr += 1
-    self.current_agent = WHITE if self.current_agent == BLACK else BLACK
+    self.current_agent = self.gym.white if self.current_agent == self.gym.black else self.gym.black
+    self.gym.roll()
 
   # Renders the game, only mode is "human"
   def render(self, mode='human'):
     self.gym.render(self.round_nr)
+    print()
