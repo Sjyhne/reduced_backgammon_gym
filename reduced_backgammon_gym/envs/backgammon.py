@@ -412,48 +412,31 @@ class Backgammon:
         """
             The action space is defined by the number of spots a piece can move to other spots
         """
-        low = [0 for i in range(2)]
-        high = [N_SPOTS + 1 for i in range(2)]
-        return low, high
-        ...
+        nvec = [N_SPOTS + 1 for i in range(2)]
+        return nvec
 
     def get_observation_space(self):
         """
             The observation space is defined from the number of spots, the bar, the possible die rolls and the turn of the player
             Therefore we need to calculate these by using the static variables on top
         """
-        spots_low = [0 for i in range(N_SPOTS)]
-        spots_high = [MAX_N_STACK * 2 + 1 for i in range(N_SPOTS)]
+        spots = [MAX_N_STACK * 2 + 1 for i in range(N_SPOTS)]
+        bar = [2 for i in range(2)]
+        roll = [len(list(itertools.combinations_with_replacement(range(1, DICE_SIDES + 1), 2)))]
+        player_turn = [2]
 
-        bar_low = [0 for i in range(2)]
-        bar_high = [1 for i in range(2)]
-
-        roll_low = [0]
-        roll_high = [len(set(itertools.permutations([range(1, DICE_SIDES + 1), 2]))) - 1]
-        
-        player_turn_low = [0]
-        player_turn_high = [1]
-
-        low = []
-        high = []
+        nvec = []
 
         # SPOTS
-        low.extend(spots_low)
-        high.extend(spots_high)
-        
+        nvec.extend(spots)
         # BAR
-        low.extend(bar_low)
-        high.extend(bar_high)
-
+        nvec.extend(bar)
         # ROLL
-        low.extend(roll_low)
-        high.extend(roll_high)
-
+        nvec.extend(roll)
         # PLAYER TURN
-        low.extend(player_turn_low)
-        high.extend(player_turn_high)
+        nvec.extend(player_turn)
 
-        return low, high
+        return nvec
 
     def get_current_observation(self, current_player):
         """

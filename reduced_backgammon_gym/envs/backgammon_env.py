@@ -12,16 +12,12 @@ class BackgammonEnv(gym.Env):
     self.gym = Backgammon()
     
     # OBSERVATION
-    obs_low, obs_high = self.gym.get_observation_space()
-    obs_low = np.array(obs_low)
-    obs_high = np.array(obs_high)
-    self.observation_space = spaces.Box(low=obs_low, high=obs_high, dtype=np.int8)
+    obs_nvec = self.gym.get_observation_space()
+    self.observation_space = spaces.MultiDiscrete(nvec=np.array(obs_nvec, dtype=np.int8))
 
     # ACTION
-    action_low, action_high = self.gym.get_action_space()
-    action_low = np.array(action_low)
-    action_high = np.array(action_high)
-    self.action_space = spaces.Box(low=action_low, high=action_high, dtype=np.int8)
+    action_nvec = self.gym.get_action_space()
+    self.action_space = spaces.MultiDiscrete(nvec=np.array(action_nvec, dtype=np.int8))
 
     # STARTING AGENT
     self.current_agent = self.gym.starting_agent
@@ -51,10 +47,6 @@ class BackgammonEnv(gym.Env):
     self.round_nr += 1
     self.current_agent = WHITE if self.current_agent == BLACK else BLACK
 
+  # Renders the game, only mode is "human"
   def render(self, mode='human'):
     self.gym.render(self.round_nr)
-
-env = BackgammonEnv()
-
-print(env.gym.board)
-print(env.observation_space)
