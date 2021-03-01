@@ -470,9 +470,13 @@ class Backgammon:
             else:
                 observation.append(spot["count"])
 
-        observation.append(self.bar[WHITE])
-        observation.append(self.bar[BLACK])
+        # self.bar[COLOR] returns the count of how many are on the bar
+        # Therefore we need to change it to only indicating whether there are zero, or 1 or more
+        # On the bar for each color
+        observation.append(0 if self.bar[WHITE] == 0 else 1)
+        observation.append(0 if self.bar[BLACK] == 0 else 1)
 
+        # combination_with_replacements returns the perfect values for our case
         dice_combinations = list(itertools.combinations_with_replacement(range(1, DICE_SIDES + 1), 2))
         # sorted sorts the items and the tuple then makes it a tuple - Which is needed for
         # finding the tuple in the dice_combinations list of tuples.
