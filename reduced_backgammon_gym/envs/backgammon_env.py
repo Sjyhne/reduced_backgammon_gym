@@ -30,7 +30,7 @@ class BackgammonEnv(gym.Env):
 
   # Returns all "possible" actions based on the dice roll
   def get_actions(self):
-    return self.gym.generate_actions(self.current_agent, self.gym.non_used_dice)
+    return self.gym.alternate_generate_actions()
 
   def get_n_actions(self):
     return len(self.gym.non_used_dice)
@@ -67,8 +67,8 @@ class BackgammonEnv(gym.Env):
 
     return current_observation, reward, done, winner, executed
 
-  def action_is_valid(self, action):
-    return self.gym.is_valid(action)
+  def get_valid_actions(self):
+    return self.gym.get_valid_actions(self.current_agent)
   
   # Resets the environment/gym
   def reset(self):

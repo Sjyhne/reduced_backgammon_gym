@@ -37,6 +37,9 @@ class Backgammon:
         self.max_n_stack = max_n_stack
         self.double_chance = double_chance
 
+        self.bar_spot = self.n_spots
+        self.off_spot = self.n_spots
+
         self.white, self.black = 0, 1
         self.colors = {self.white: "White", self.black: "Black"}
         self.tokens = {self.white: "O", self.black: "X", None: "-"}
@@ -105,20 +108,20 @@ class Backgammon:
                 players_positions[self.black].append(i)
 
         if self.bar[self.white] > 0:
-            players_positions[self.white].append({"spot": self.bar_spots[self.white], "count": self.bar[self.white], "color": self.white})
+            players_positions[self.white].append({"spot": self.n_spots, "count": self.bar[self.white], "color": self.white})
         
         if self.bar[self.black] > 0:
-            players_positions[self.black].append({"spot": self.bar_spots[self.black], "count": self.bar[self.black], "color": self.black})
+            players_positions[self.black].append({"spot": self.n_spots, "count": self.bar[self.black], "color": self.black})
         
         return players_positions
 
     def can_bear_off(self, color):
         # Checks if there are any pieces on the bar
         if self.bar[color] > 0:
-            print("CANNOT BEAR OFF -> BAR NOT EMPTY")
+            #print("CANNOT BEAR OFF -> BAR NOT EMPTY")
             return False
         # Get the positions of the current player
-        spots = [i["spot"] for i in self.get_players_positions()[color]]  
+        spots = [i["spot"] for i in self.get_players_positions()[color]]
         # Returns True if set(spots) is a subset of set(players_home_positions)
         return set(set(spots)).issubset(self.players_home_positions[color])
 
@@ -129,110 +132,81 @@ class Backgammon:
 
     # [1, 1] -> (7, 9)
     def is_src_furthest_piece(self, color, action):
-        _, (src, dst) = action
+        roll, (src, dst) = action
         player_positions = [i["spot"] for i in self.get_players_positions()[color]]
+        if set(player_positions).issubset(self.players_home_positions[color]):
+            if color == self.white:
+                # It is min() for white because their home are at end of board
+                if len(player_positions) > 0 and src == min(player_positions):
+                    return True
+                else:
+                    return False
+            else:
+                # It is max() for BLACK because their home are at the start of board
+                if len(player_positions) > 0 and src == max(player_positions) and src != self.bar_spot:
+                    return True
+                else:
+                    return False
+        return False
+
+
+    def new_is_valid(self, color, action):
+        roll, (src, target) = action
+
+        # 1, (4, 5)
+        # (2, 1)
+
+        if not self.can_bear_off(color) and target == self.off_spot:
+            return False
+
+        # If the roll is not in the non_used_dice, then it cannot use the action
+        if abs(roll) not in self.non_used_dice:
+            return False
+
         if color == self.white:
-            # It is min() for white because their home are at end of board
-            if src == min(player_positions):
-                return True
-            else:
+            if not self.is_src_furthest_piece(color, action) and roll + src > self.off_spot:
+                if src != self.bar_spot:
+                    return False
+                
+        elif color == self.black:
+            if not self.is_src_furthest_piece(color, action) and src - roll < -1:
                 return False
-        else:
-            # It is max() for BLACK because their home are at the start of board
-            if src == max(player_positions):
-                return True
-            else:
+        
+        # If the target has more than two enemies, then it cannot move there.
+        if target != self.n_spots and self.board[target]["count"] >= 2 and self.board[target]["color"] == self.get_opponent_color(color):
+            return False
+
+        # (7, 1)
+        if color == self.white and src != self.bar_spot:
+            # If the color is white, then the target must be smaller than the source
+            # So if it is the same or bigger, then return False
+
+            if target <= src:
+                return False
+        
+        elif color == self.black and target != self.off_spot:
+            # If the target is smaller or the same as src, then action cannot be done
+            if target >= src:
                 return False
 
-    # color is the color of the current player, and action
-    # is a tuple for the src and dest for the action (src, dest)
-    def is_valid(self, color, action):
-        _, (src, target) = action
-        # Must check if the player has a piece on the bar, if he has, then he must
-        # Move that piece first.
-        # Have to check if the action is within bounds of the board
-        if color == self.white and target > src:
-            if self.bar[color] > 0:
-                # Then we need to check if the move is moving the piece from the bar
-                # And onto the board
-                if src == self.bar[self.white] and (0 <= target < self.n_spots):
-                    # Check if there are more than two enemies on the target
-                    if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
-                        return False
-                    # Check if there are 3 pieces on the spot - if so, then we cannot move
-                    elif self.board[target]["count"] == self.max_n_stack:
-                        return False
-                    else:
-                        return True
+        # First check if someone is on the bar
+        if self.bar[color] > 0:
+            # IF someone is on the bar, then the source must be n_sptos
+            if src != self.bar_spot:
+                return False
 
-            elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
-                if 0 <= target < self.n_spots:
-                    # If the target is within board limits, then we have to check
-                    # If the target has two or more enemies, or the target reaches
-                    # The upper limit of how many pieces can be stacked (3)
-                    if self.board[target]["color"] != color and self.board[target]["count"] > 1:
-                        return False
-                    elif self.board[target]["color"] == color and self.board[target]["count"] == self.max_n_stack:
-                        return False
-                    else:
-                        return True
-                # If the target is not within the bounds of the board
-                # Then we have to check whether or not the player can
-                # Bear off
-                elif self.can_bear_off(color):
-                    # If the target is not self.n_spots, then check if the source piece
-                    # Is the last piece of all pieces in home
-                    if target > self.n_spots or target < -1:
-                        if self.is_src_furthest_piece(color, action):
-                            return True
-                        else:
-                            return False
-                    
-                    return True
+        elif self.bar[color] == 0:
+            if src == self.bar_spot:
+                return False
 
+        if src != self.n_spots and self.board[src]["color"] != color:
             return False
-        elif color == self.black and target < src:
-            if self.bar[color] > 0:
-                # Then we need to check if the move is moving the piece from the bar
-                # And onto the board
-                if src == self.bar_spots[self.black] and (0 <= target < self.n_spots):
-                    # Check if there are more than two enemies on the target
-                    if self.board[target]["count"] > 1 and self.board[target]["color"] == self.get_opponent_color(color):
-                        return False
-                    # Check if there are 3 pieces on the spot - if so, then we cannot move
-                    elif self.board[target]["count"] == self.max_n_stack:
-                        return False
-                    else:
-                        return True
-
-            elif self.board[src]["count"] >= 1 and self.board[src]["color"] == color:
-                if 0 <= target < self.n_spots:
-                    # If the target is within board limits, then we have to check
-                    # If the target has two or more enemies, or the target reaches
-                    # The upper limit of how many pieces can be stacked (3)
-                    if self.board[target]["color"] != color and self.board[target]["count"] > 1:
-                        return False
-                    elif self.board[target]["color"] == color and self.board[target]["count"] == self.max_n_stack:
-                        return False
-                    else:
-                        return True
-                # If the target is not within the bounds of the board
-                # Then we have to check whether or not the player can
-                # Bear off
-                elif self.can_bear_off(color):
-                    # If the target is not self.n_spots, then check if the source piece
-                    # Is the last piece of all pieces in home
-                    if target > self.n_spots or target < -1:
-                        if self.is_src_furthest_piece(color, action):
-                            return True
-                        else:
-                            return False
-                    
-                    return True
-
+        
+        if src != self.n_spots and self.board[src]["count"] == 0:
             return False
-        else:
-            return False
+
+        # If none of the conditions above is satisfied, then the action can be done.
+        return True
 
     def get_opponent_color(self, color):
         if color == self.white:
@@ -265,99 +239,95 @@ class Backgammon:
             self.board[dst].update({"count": dst_piece_count + 1})
 
     def move_piece_from_src_to_dest(self, color, action):
-        _, (src, dst) = action
+        roll, (src, target) = action
         src_piece_count = self.board[src]["count"]
         if src_piece_count < 1:
             raise RuntimeError("Cannot move from spot because there are no pieces left")
         
         self.remove_piece_from_src(color, src)
-        self.add_piece_to_dst(color, dst)
+        self.add_piece_to_dst(color, target)
         
     def move_piece_off(self, color, action):
-        _, (src, _) = action
+        roll, (src, target) = action
         # Remove piece from src
         self.remove_piece_from_src(color, src)
         # Add piece to "OFF"
         self.off[color] += 1
 
     def move_from_bar(self, color, action):
-        _, (src, dst) = action
+        roll, (src, target) = action
         # Decrement the bar counter
         self.bar[color] -= 1
         # Move the piece onto the board
-        self.add_piece_to_dst(color, dst)
+        self.add_piece_to_dst(color, target)
         
-    def execute_action(self, color, action):
+
+    def alternate_execute_action(self, color, action):
         roll, (src, target) = action
+    
         # If the action is true
-        if self.is_valid(color, action):
+        if self.new_is_valid(color, action):
             # Check if there is an opponent piece on the target
             # If the player can bear off (all home) and the target is not in
             # The normal range of spots, then move the player off
-            if self.can_bear_off(color) and target not in range(self.n_spots):
+            if self.can_bear_off(color) and target == self.n_spots:
                 self.move_piece_off(color, action)
             elif self.board[target]["color"] == self.get_opponent_color(color) and self.board[target]["count"] == 1:
                 # Adding the opponents piece to the bar and removing it from the target
                 self.knock_out_piece(self.get_opponent_color(color), target)
                 # Move the piece from the source to the target
-                if src == self.bar_spots[color]:
+                if src == self.n_spots and self.bar[color] > 0:
                     self.move_from_bar(color, action)
                 else:
                     self.move_piece_from_src_to_dest(color, action)
-            elif src == self.bar_spots[color]:
+            elif src == self.n_spots:
                 self.move_from_bar(color, action)
             else:
                 # Move the piece from the source to the target
                 self.move_piece_from_src_to_dest(color, action)
 
-            self.non_used_dice.remove(roll)
+            self.non_used_dice.remove(abs(roll))
             self.used_dice.append(roll)
             return True
         else:
             #print("ACTION IS NOT VALID")
             return False
 
-    # The starting row variable is for when we are moving from bar
-    def generate_single_action(self, src, starting_point, roll):
-        actions = []
-        # Add all actions where the die is added to the starting point
-        # Add all actions where the die is subtracted from the starting point
-        for die in roll:
-            actions.append((die, (src, starting_point + die)))
-            actions.append((die, (src, starting_point - die)))
-        
-        return list(set(actions))
+    def alternate_generate_actions(self, color):
+        normal = list(itertools.combinations_with_replacement(range(8), 2))
+        rev = list(itertools.combinations_with_replacement(reversed(range(8)), 2))
+        temp = normal + rev
 
-    def generate_actions(self, color, roll):
-        # First step must be to get all of the positions of the current player
-        spots = [i["spot"] for i in self.get_players_positions()[color]]
-        actions = []
+        final = []
 
-        # For each spot, generate an action with the associated source spot
-        for spot in spots:
-            src = spot
-            # Must check if the source is BAR, then the starting position is either
-            # -1 or 8, depending on color
-            if src == self.bar_spots[color]:
-                # An example would be that if WHITE uses a die of value 1 from BAR
-                # Then it will land on spot 0, therefore -1 is used
-                if color == self.white:
-                    temp_src = -1
-                    temp_actions = self.generate_single_action(src, temp_src, roll)
-                    actions.extend(temp_actions)
-                # Same here, only black is moving the opposite direction
-                # So the using a die of value 1 means landing on positions 8
-                elif color == self.black:
-                    temp_src = self.n_spots
-                    temp_actions = self.generate_single_action(src, temp_src, roll)
-                    actions.extend(temp_actions)
-            # If the src spot is not the bar, then nothing extra needs to be 
-            # Taken care of
+        for action in temp:
+            src, dst = action
+            if color == self.white:
+                if action[0] == 7:
+                    final.append((dst - (-1), (action)))
+                else:
+                    final.append((dst - src, (action)))
             else:
-                temp_actions = self.generate_single_action(src, src, roll)
-                actions.extend(temp_actions)
-            
-        return list(set(actions))
+                if action[0] == 7:
+                    final.append((src - dst, (action)))
+                elif action[1] == 7:
+                    final.append((-1 - src, (action)))
+                else:
+                    final.append((dst - src, (action)))
+
+        return list(set(final))
+
+    def get_valid_actions(self, color):
+        all_actions = self.alternate_generate_actions()
+
+        valid_actions = []
+
+        for action in all_actions:
+            if self.new_is_valid(action):
+                valid_actions.append(action)
+
+        return valid_actions
+
 
     def render(self, round_nr):
         print(f"BLACK              ROUND: {round_nr}           WHITE")
@@ -441,6 +411,7 @@ class Backgammon:
 
 
 if __name__ == '__main__':
+
     bg = Backgammon()
     print(bg.get_current_observation(0))
 
@@ -448,28 +419,30 @@ if __name__ == '__main__':
     bg = Backgammon()
     agent = 0
     bg.render(0)
-    for r in range(50):
+    for r in range(10000):
         bg.roll()
         print("AGENT:", bg.colors[agent])
         print("ROLL:", bg.non_used_dice)
-        for _ in bg.non_used_dice:
-            actions = bg.generate_actions(agent, bg.non_used_dice)
-            print("ACTIONS:", actions)
-            print("VALID ACTIONS")
-            for a in actions:
-                if bg.is_valid(agent, a):
-                    print(a)
+        print(bg.players_home_positions[agent])
+        print(bg.get_players_positions())
+        print(bg.can_bear_off(agent))
+        for _ in range(len(bg.non_used_dice)):
+            actions = bg.alternate_generate_actions(agent)
+            print(actions)
+            for action in actions:
+                if bg.new_is_valid(agent, action):
+                    print("Valid:", action)
             executed = False
-            for _ in actions:
+            for _ in range(len(actions)):
                 action = random.choice(actions)
-                executed = bg.execute_action(agent, action)
+                executed = bg.alternate_execute_action(agent, action)
                 if executed:
                     print("ACTION DONE:", action)
                     break
                 else:
-                    print("ACTION NOT DONE:", action)
                     actions.remove(action)
-            print("LEN NON USED DICE:", len(bg.non_used_dice))
+
+            #print("LEN NON USED DICE:", len(bg.non_used_dice))
             
         bg.render(r)
         if bg.off[agent] == bg.n_pieces:
@@ -477,7 +450,6 @@ if __name__ == '__main__':
             break
         agent = bg.get_opponent_color(agent)
         print("\n")
-    
 
 
 """
