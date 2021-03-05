@@ -30,7 +30,7 @@ class BackgammonEnv(gym.Env):
 
   # Returns all "possible" actions based on the dice roll
   def get_actions(self):
-    return self.gym.alternate_generate_actions()
+    return self.gym.alternate_generate_actions(self.current_agent)
 
   def get_n_actions(self):
     return len(self.gym.non_used_dice)
@@ -51,10 +51,18 @@ class BackgammonEnv(gym.Env):
 
     executed = False
 
-    if self.gym.is_valid(self.current_agent, action):
-      executed = self.gym.execute_action(self.current_agent, action)
+    all_actions = self.gym.alternate_generate_actions(self.current_agent)
+
+    a_actions = [i[1] for i in all_actions]
+
+    idx = a_actions.index(action)
+
+    action = all_actions[idx]
+
+    if self.gym.new_is_valid(self.current_agent, action):
+      executed = self.gym.alternate_execute_action(self.current_agent, action)
     else:
-      reward = -0.2
+      reward = -0.5
 
     current_observation = self.gym.get_current_observation(self.current_agent)
     
@@ -65,7 +73,7 @@ class BackgammonEnv(gym.Env):
       done = True
       reward = 1
 
-    return current_observation, reward, done, winner, executed
+    return tuple(current_observation), reward, done, winner, executed
 
   def get_valid_actions(self):
     return self.gym.get_valid_actions(self.current_agent)
@@ -74,7 +82,7 @@ class BackgammonEnv(gym.Env):
   def reset(self):
     self.gym = Backgammon()
     self.current_agent = self.gym.starting_agent
-    return self.gym.get_current_observation(self.current_agent)
+    return tuple(self.gym.get_current_observation(self.current_agent)), self.current_agent
 
   # Changes the players turn and increments the round number
   def change_player_turn(self):

@@ -263,6 +263,7 @@ class Backgammon:
         
 
     def alternate_execute_action(self, color, action):
+
         roll, (src, target) = action
     
         # If the action is true
@@ -298,7 +299,17 @@ class Backgammon:
         rev = list(itertools.combinations_with_replacement(reversed(range(8)), 2))
         temp = normal + rev
 
+        
+
         final = []
+
+        for idx, i in enumerate(reversed(range(self.n_spots)[self.n_spots - self.n_home_positions:])):
+            for index, die in enumerate(range(self.dice_sides - idx)):
+                final.append((range(self.dice_sides, 0, -1)[index], (i, self.n_spots)))
+
+        for idx, i in enumerate(range(self.n_spots)[:self.n_home_positions]):
+            for index, die in enumerate(range(self.dice_sides - idx)):
+                final.append((range(self.dice_sides, 0, -1)[index], (i, self.n_spots)))
 
         for action in temp:
             src, dst = action
@@ -318,12 +329,12 @@ class Backgammon:
         return list(set(final))
 
     def get_valid_actions(self, color):
-        all_actions = self.alternate_generate_actions()
+        all_actions = self.alternate_generate_actions(color)
 
         valid_actions = []
 
         for action in all_actions:
-            if self.new_is_valid(action):
+            if self.new_is_valid(color, action):
                 valid_actions.append(action)
 
         return valid_actions
