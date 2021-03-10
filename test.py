@@ -32,8 +32,8 @@ import random
     6: 0 -> 0 spillere, 1 - 4 -> 1 - 4 hvite spillere, 5 - 8 -> 1 - 4 svarte spillere (Value: 9)
     7: (Hvit bar) 0 -> 0 spillere, 1 eller flere hvite spillere (Value: 2)
     8: (Svart bar) 0 -> 0 spillere, 1 eller flere svarte spillere (Value: 2)
-    9: (Terning) 0 -> (1, 1), 1 -> (1, 2), 2 -> (2, 2) | Alle permutations for antall sider på terningen som er brukt | (Value: 3)
-    10: (Player turn) 0 -> Hvit, 1 -> Svart (Value: 2)
+    9: (Terning side 1): 0 -> Ingen flere trekk igjen med verdien 1, 1 -> 1 eller flere trekk igjen med verdien 1
+    10: (Terning side 2): 0 -> Ingen flere trekk igjen med veriden 2, 1 -> 1 eller flere trekk igjen med verdien 2
 
     ### ACTION SPACE
 
@@ -42,7 +42,7 @@ import random
 """
 
 
-rep = np.zeros((9, 9, 9, 9, 9, 9, 9, 2, 2, 3, 2, 8, 8), np.int8)
+rep = np.zeros((9, 9, 9, 9, 9, 9, 9, 2, 2, 2, 2, 8, 8), np.float16)
 
 print((rep.size * rep.itemsize) / (1024 ** 2))
 

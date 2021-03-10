@@ -410,24 +410,27 @@ class Backgammon:
         observation.append(0 if self.bar[self.white] == 0 else 1)
         observation.append(0 if self.bar[self.black] == 0 else 1)
 
-        # combination_with_replacements returns the perfect values for our case
-        dice_combinations = list(itertools.combinations_with_replacement(range(1, self.dice_sides + 1), 2))
-        # sorted sorts the items and the tuple then makes it a tuple - Which is needed for
-        # finding the tuple in the dice_combinations list of tuples.
-        observation.append(dice_combinations.index(tuple(sorted(self.dice))))
+        for side in range(1, self.dice_sides + 1):
+            spotted = False
+            for die in self.non_used_dice:
+                if side == die:
+                    spotted = True
+            if spotted:
+                observation.append(1)
+            else:
+                observation.append(0)
 
-        observation.append(current_player)
-        
         return observation
 
 
 if __name__ == '__main__':
 
     bg = Backgammon()
+    print(bg.non_used_dice)
     print(bg.get_current_observation(0))
 
     
-    bg = Backgammon()
+"""    bg = Backgammon()
     agent = 0
     bg.render(0)
     for r in range(10000):
@@ -460,7 +463,7 @@ if __name__ == '__main__':
             print(bg.colors[agent], "WON!")
             break
         agent = bg.get_opponent_color(agent)
-        print("\n")
+        print("\n")"""
 
 
 """
