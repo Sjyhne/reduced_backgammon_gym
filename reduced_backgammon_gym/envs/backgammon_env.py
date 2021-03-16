@@ -94,3 +94,8 @@ class BackgammonEnv(gym.Env):
   def render(self, mode='human'):
     self.gym.render(self.round_nr)
     print()
+
+
+b_env = BackgammonEnv()
+
+print(b_env.observation_space)

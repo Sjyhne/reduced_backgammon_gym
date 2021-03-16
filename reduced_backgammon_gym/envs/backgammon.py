@@ -373,8 +373,8 @@ class Backgammon:
         """
         spots = [self.max_n_stack * 2 + 1 for i in range(self.n_spots)]
         bar = [2 for i in range(2)]
-        roll = [len(list(itertools.combinations_with_replacement(range(1, self.dice_sides + 1), 2)))]
-        player_turn = [2]
+        roll_1 = [2]
+        roll_2 = [2]
 
         nvec = []
 
@@ -382,10 +382,10 @@ class Backgammon:
         nvec.extend(spots)
         # BAR
         nvec.extend(bar)
-        # ROLL
-        nvec.extend(roll)
-        # PLAYER TURN
-        nvec.extend(player_turn)
+        # AVAILABLE DICE
+        # TODO: Undo hardcoded
+        nvec.extend(roll_1)
+        nvec.extend(roll_2)
 
         return nvec
 
