@@ -59,10 +59,10 @@ class BackgammonEnv(gym.Env):
 
     action = all_actions[idx]
 
-    if self.gym.new_is_valid(self.current_agent, action):
+    if action in self.get_valid_actions():
       executed = self.gym.alternate_execute_action(self.current_agent, action)
     else:
-      reward = -0.5
+      reward = -1 
 
     current_observation = self.gym.get_current_observation(self.current_agent)
     
@@ -94,8 +94,3 @@ class BackgammonEnv(gym.Env):
   def render(self, mode='human'):
     self.gym.render(self.round_nr)
     print()
-
-
-b_env = BackgammonEnv()
-
-print(b_env.observation_space)

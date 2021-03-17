@@ -59,3 +59,14 @@ import itertools
 # (0, 1, 2, 3, 4, 5, 6, 7)
 # (0, 7) -> 
 
+
+print(100//21)
+
+data = []
+
+for i in range(100):
+    data.append(i)
+
+chunks = [data[x:x+20] for x in range(0, len(data), 20)]
+
+print(chunks)
