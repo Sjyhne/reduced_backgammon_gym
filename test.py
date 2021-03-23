@@ -1,5 +1,8 @@
 import numpy as np
 import random
+
+from utils import flip_observation, flip_action
+
 """
     0: 0 -> 0 spillere, 1 - 5 -> 1 - 5 hvite spillere, 6 - 10 -> 1 - 5 svarte spillere (Value: 9)
     1: ...
@@ -70,3 +73,17 @@ for i in range(100):
 chunks = [data[x:x+20] for x in range(0, len(data), 20)]
 
 print(chunks)
+
+
+N_PIECES = 4
+N_SPOTS = 7
+
+obs = [1, 1, 6, 0, 2, 0, 6]
+act = (1, 3)
+
+flipped_obs = flip_observation(obs, N_PIECES, N_SPOTS)
+
+flipped_action = flip_action(act, N_SPOTS)
+
+print(flipped_obs)
+print(flipped_action)
