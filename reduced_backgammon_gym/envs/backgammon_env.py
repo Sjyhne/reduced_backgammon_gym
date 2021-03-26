@@ -43,6 +43,8 @@ class BackgammonEnv(gym.Env):
       Returns False if the action was "declined" and not executed
     """
 
+    src, dst = action
+
     reward = 0
 
     done = False
@@ -51,21 +53,28 @@ class BackgammonEnv(gym.Env):
 
     executed = False
 
-    all_actions = self.gym.alternate_generate_actions(self.current_agent)
+    all_valid_actions = self.gym.get_valid_actions(self.current_agent)
+    # [(1, (0, 7)), (2, (0, 7)), ..]
 
-    a_actions = [i[1] for i in all_actions]
+    a_actions = [i[1] for i in all_valid_actions]
+    # [(0, 7), (2, 1),]
+    # Sender inn (0, 7)
 
-    idx = a_actions.index(action)
+    idxs = [i for i, x in enumerate(a_actions) if x == action]
 
-    action = all_actions[idx]
+    # action = all_actions[idxs[0]]
+    if len(idxs) > 0:
+      action = all_valid_actions[idxs[0]]
 
-    if action in self.get_valid_actions():
+
+    if len(idxs) > 0:
+      #print(action)
       executed = self.gym.alternate_execute_action(self.current_agent, action)
     else:
       reward = -1 
 
     current_observation = self.gym.get_current_observation(self.current_agent)
-    
+
     if self.round_nr == self.max_episodes:
       done = True
     elif self.gym.off[self.current_agent] == self.gym.n_pieces:
