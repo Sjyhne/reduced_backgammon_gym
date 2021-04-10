@@ -389,7 +389,7 @@ class Backgammon:
 
         return nvec
 
-    def get_current_observation(self, current_player):
+    def get_current_observation(self):
         """
             0 -> 0 Pieces 
             1 - (self.max_n_stack) -> 1 - (self.max_n_stack) White Pieces
