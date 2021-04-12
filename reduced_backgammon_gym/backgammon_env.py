@@ -103,3 +103,45 @@ class BackgammonEnv(gym.Env):
   def render(self, mode='human'):
     self.gym.render(self.round_nr)
     print()
+    
+
+  def set_starting_state_and_player(self, state):
+    player_spots = state[:7]
+    bar_count = state[7:9]
+    dice = state[9:]
+
+    board = []
+
+    for i in range(self.gym.n_spots):
+        count = None
+        color = None
+        if player_spots[i] > self.gym.n_pieces:
+            count = player_spots[i] - self.gym.n_pieces
+            color = 1
+        else:
+            count = player_spots[i]
+            color = 0
+        
+        board.append({"count": count, "color": color})
+        self.gym.board[i].update({"count": count, "color": color})
+
+    self.gym.bar[0] = bar_count[0]
+    self.gym.bar[1] = bar_count[1]
+
+    self.gym.off[0] = self.gym.n_pieces - sum([i["count"] if i["color"] == 0 else 0 for i in board]) - self.gym.bar[0]
+    self.gym.off[1] = self.gym.n_pieces - sum([i["count"] if i["color"] == 1 else 0 for i in board]) - self.gym.bar[1]
+
+    if dice == [1, 0]:
+        self.gym.non_used_dice = [1, 1, 1, 1]
+    elif dice == [1, 1]:
+        self.gym.non_used_dice = [1, 2]
+    else:
+        self.gym.non_used_dice = [2, 2, 2, 2]
+
+    self.current_agent = 1
+
+if __name__ == '__main__':
+    bg = BackgammonEnv()
+    bg.render()
+
+    bg.set_starting_state_and_player([1, 0, 5, 5, 2, 6, 0, 1, 0, 1, 0])
