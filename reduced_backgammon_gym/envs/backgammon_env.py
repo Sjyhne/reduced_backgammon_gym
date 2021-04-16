@@ -110,7 +110,7 @@ class BackgammonEnv(gym.Env):
     print()
 
 
-  def set_starting_state_and_player(self, state):
+  def set_starting_state_and_player(self, state, player):
     player_spots = state[:7]
     bar_count = state[7:9]
     dice = state[9:]
@@ -143,7 +143,7 @@ class BackgammonEnv(gym.Env):
     else:
         self.gym.non_used_dice = [2, 2, 2, 2]
 
-    self.current_agent = 1
+    self.current_agent = player
 
 if __name__ == '__main__':
     bg = BackgammonEnv()
