@@ -73,7 +73,7 @@ class BackgammonEnv(gym.Env):
     else:
       reward = -1 
 
-    current_observation = self.gym.get_current_observation(self.current_agent)
+    current_observation = self.gym.get_current_observation()
     
     if self.round_nr == self.max_episodes:
       done = True
@@ -91,6 +91,7 @@ class BackgammonEnv(gym.Env):
   def reset(self):
     self.gym = Backgammon()
     self.current_agent = self.gym.starting_agent
+    self.round_nr = 0
     return tuple(self.gym.get_current_observation(self.current_agent)), self.current_agent
 
   # Changes the players turn and increments the round number
