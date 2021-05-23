@@ -93,6 +93,7 @@ class BackgammonEnv(gym.Env):
   def reset(self):
     self.gym = Backgammon()
     self.current_agent = self.gym.starting_agent
+    self.round_nr = 0
     return tuple(self.gym.get_current_observation()), self.current_agent
 
   # Changes the players turn and increments the round number
