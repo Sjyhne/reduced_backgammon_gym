@@ -4,6 +4,8 @@ from gym.utils import seeding
 import numpy as np
 import random
 
+from agents import RandomAgent
+
 from reduced_backgammon_gym.envs.backgammon import Backgammon
 
 class BackgammonEnv(gym.Env):
@@ -28,6 +30,8 @@ class BackgammonEnv(gym.Env):
 
     self.round_nr = 1
 
+    self.random_agent = RandomAgent()
+
   # Returns all "possible" actions based on the dice roll
   def get_actions(self):
     return self.gym.alternate_generate_actions(self.current_agent)
@@ -38,34 +42,23 @@ class BackgammonEnv(gym.Env):
   # Steps through and environment - An agent will be able to step through the environment
   # Several times before it is the other players turn
   def step(self, action):
-    """
-      Returns True if the action was "accepted" and executed
-      Returns False if the action was "declined" and not executed
-    """
+
 
     src, dst = action
-
+    action = (src, dst)
     reward = 0
-
     done = False
-
     winner = None
-
     executed = False
-
     all_valid_actions = self.gym.get_valid_actions(self.current_agent)
     # [(1, (0, 7)), (2, (0, 7)), ..]
-
     a_actions = [i[1] for i in all_valid_actions]
     # [(0, 7), (2, 1),]
     # Sender inn (0, 7)
-
     idxs = [i for i, x in enumerate(a_actions) if x == action]
-
     # action = all_actions[idxs[0]]
     if len(idxs) > 0:
       action = all_valid_actions[idxs[0]]
-
 
     if len(idxs) > 0:
       #print(action)
@@ -83,8 +76,48 @@ class BackgammonEnv(gym.Env):
       winner = self.current_agent
       done = True
       reward = 1
+    
+    if (len(self.get_valid_actions()) == 0 or self.get_n_actions == 0) and not done:
+      self.change_player_turn()
 
-    return tuple(current_observation), reward, done, winner, executed
+    # RANDOM
+    if self.current_agent == 0 and not done:
+      for _ in range(self.get_n_actions()):
+        valid_actions = self.get_valid_actions()
+        if len(valid_actions) == 0:
+          break
+        action = random.choice(valid_actions)
+        src, dst = action
+        action = (src, dst)
+        reward = 0
+        done = False
+        winner = None
+        executed = False
+        # [(1, (0, 7)), (2, (0, 7)), ..]
+        a_actions = [i[1] for i in valid_actions]
+        # [(0, 7), (2, 1),]
+        # Sender inn (0, 7)
+        idxs = [i for i, x in enumerate(a_actions) if x == action[1]]
+        # action = all_actions[idxs[0]]
+        if len(idxs) > 0:
+          action = valid_actions[idxs[0]]
+
+        if len(idxs) > 0:
+          #print(action)
+          executed = self.gym.alternate_execute_action(self.current_agent, action)
+
+        current_observation = self.gym.get_current_observation()
+
+        if self.round_nr == self.max_episodes:
+          done = True
+        elif self.gym.off[self.current_agent] == self.gym.n_pieces:
+          winner = self.current_agent
+          done = True
+          reward = -1
+
+      self.change_player_turn()
+
+    return np.asarray(self.get_current_observation()), reward, done, {"winner": winner, "executed": executed}
 
   def get_valid_actions(self):
     return self.gym.get_valid_actions(self.current_agent)
@@ -94,7 +127,7 @@ class BackgammonEnv(gym.Env):
     self.gym = Backgammon()
     self.current_agent = self.gym.starting_agent
     self.round_nr = 0
-    return tuple(self.gym.get_current_observation()), self.current_agent
+    return np.asarray(self.gym.get_current_observation())
 
   # Changes the players turn and increments the round number
   def change_player_turn(self):
